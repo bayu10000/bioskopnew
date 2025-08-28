@@ -13,6 +13,6 @@ class Ruangan extends Model
 
     public function showtimes()
     {
-        return $this->hasMany(Showtime::class, 'ruangan');
+        return $this->hasMany(Showtime::class, 'ruangan_id');
     }
 }

@@ -18,19 +18,15 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\UserResource\RelationManagers;
 
 class UserResource extends Resource
-
 {
     protected static ?string $model = User::class;
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
     protected static ?string $navigationGroup = 'Roles and Permissions';
     protected static ?string $navigationLabel = 'Users';
 
-
     public static function form(Forms\Form $form): Forms\Form
     {
         return $form->schema([
-
-
             Select::make('roles')
                 ->multiple()
                 ->relationship('roles', 'name')
@@ -56,14 +52,6 @@ class UserResource extends Resource
                 ->image()
                 ->directory('avatars')
                 ->imagePreviewHeight('100'),
-
-            Select::make('role')
-                ->options([
-                    'user' => 'User',
-                    'admin' => 'Admin',
-                ])
-                ->default('user')
-                ->required(),
         ]);
     }
 
@@ -73,7 +61,7 @@ class UserResource extends Resource
             TextColumn::make('id')->sortable(),
             TextColumn::make('name')->searchable(),
             TextColumn::make('email')->searchable(),
-            TextColumn::make('role')->badge(),
+            TextColumn::make('roles.name')->badge(),
             TextColumn::make('created_at')->dateTime(),
         ]);
     }

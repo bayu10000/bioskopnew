@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use Filament\Forms;
 use App\Models\Film;
+use App\Models\Ruangan;
 use Filament\Tables;
 use App\Models\Showtime;
 use Filament\Forms\Form;
@@ -15,14 +16,11 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TimePicker;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\ShowtimeResource\Pages;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Resources\ShowtimeResource\RelationManagers;
 
 class ShowtimeResource extends Resource
 {
     protected static ?string $model = Showtime::class;
     protected static ?string $navigationGroup = 'Seat And Date';
-
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
     public static function form(Form $form): Form
@@ -34,9 +32,9 @@ class ShowtimeResource extends Resource
                     ->relationship('film', 'judul')
                     ->required(),
 
-                TextInput::make('ruangan')
+                Select::make('ruangan_id')
                     ->label('Ruangan')
-                    ->placeholder('Contoh: Matahari / Bulan / Bintang')
+                    ->relationship('ruangan', 'nama')
                     ->required(),
 
                 DatePicker::make('tanggal')
@@ -54,39 +52,26 @@ class ShowtimeResource extends Resource
             ]);
     }
 
-
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('film.judul')
-                    ->label('Film')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('ruangan')
-                    ->label('Ruangan')
-                    ->sortable()
+                    ->label('Judul Film')
                     ->searchable(),
 
+                Tables\Columns\TextColumn::make('ruangan.nama')
+                    ->label('Ruangan')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('tanggal')
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('jam'),
                 Tables\Columns\TextColumn::make('harga')
-                    ->numeric()
+                    ->label('Harga')
+                    ->money('IDR')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -109,9 +94,9 @@ class ShowtimeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListShowtimes::route('/'),
+            'index'  => Pages\ListShowtimes::route('/'),
             'create' => Pages\CreateShowtime::route('/create'),
-            'edit' => Pages\EditShowtime::route('/{record}/edit'),
+            'edit'   => Pages\EditShowtime::route('/{record}/edit'),
         ];
     }
 }

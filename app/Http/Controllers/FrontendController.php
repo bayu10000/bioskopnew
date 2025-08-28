@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Film;
 use App\Models\Showtime;
 use App\Models\Order;
-use App\Models\OrderDetail;
 use App\Models\Seat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,70 +28,60 @@ class FrontendController extends Controller
         return view('frontend.film', compact('film', 'showtimes'));
     }
 
-    // Form pemesanan
+    // ✅ Perbaikan: Tambahkan $availableCount
     public function order($showtimeId)
     {
-        $showtime = Showtime::with('film')->findOrFail($showtimeId);
+        $showtime = Showtime::with('film', 'seats')->findOrFail($showtimeId);
+        $seats = $showtime->seats;
+        $availableCount = $seats->where('status', 'available')->count();
 
-        $availableCount = Seat::where('showtime_id', $showtime->id)
-            ->where('status', 'available')
-            ->count();
-
-        return view('frontend.order', [
-            'showtime'       => $showtime,
-            'availableCount' => $availableCount,
-        ]);
+        return view('frontend.order', compact('showtime', 'seats', 'availableCount'));
     }
 
-    // Simpan pesanan + auto-assign kursi
+    public function myOrders()
+    {
+        $orders = Order::with('showtime.film', 'showtime.ruangan', 'seats')
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->get();
+
+        return view('frontend.my-orders', compact('orders'));
+    }
+
     public function storeOrder(Request $request)
     {
         $request->validate([
             'showtime_id'   => 'required|exists:showtimes,id',
             'jumlah_tiket'  => 'required|integer|min:1',
+            'kursi'         => 'required|array|min:1',
+            'kursi.*'       => 'distinct|exists:seats,id'
+        ], [
+            'kursi.*.distinct' => 'Kursi tidak boleh sama.',
         ]);
 
-        $showtime = Showtime::findOrFail($request->showtime_id);
+        $showtime = Showtime::with('seats')->findOrFail($request->showtime_id);
+        $totalHarga = $showtime->harga * $request->jumlah_tiket;
 
-        // Cari kursi available sesuai jumlah tiket
-        $seats = Seat::where('showtime_id', $showtime->id)
-            ->where('status', 'available')
-            ->orderBy('nomor_kursi')
-            ->take($request->jumlah_tiket)
-            ->get();
+        $invalidSeats = Seat::whereIn('id', $request->kursi)
+            ->where('status', '!=', 'available')
+            ->count();
 
-        if ($seats->count() < $request->jumlah_tiket) {
-            return back()->withErrors([
-                'jumlah_tiket' => 'Kursi tidak mencukupi. Tersisa: ' . $seats->count() . ' kursi.',
-            ])->withInput();
+        if ($invalidSeats > 0) {
+            return back()->withErrors(['kursi' => 'Ada kursi yang sudah terbooking. Silakan pilih ulang.'])->withInput();
         }
 
-        // Buat order
         $order = Order::create([
             'user_id'      => Auth::id(),
             'showtime_id'  => $showtime->id,
             'jumlah_tiket' => $request->jumlah_tiket,
-            'total_harga'  => $showtime->harga * $request->jumlah_tiket,
-            'tanggal'      => $showtime->tanggal, // optional: bisa dihapus juga, karena sudah ada di showtime
+            'total_harga'  => $totalHarga,
             'status'       => 'pending',
         ]);
 
-        // Simpan detail kursi + tandai kursi booked
-        foreach ($seats as $seat) {
-            OrderDetail::create([
-                'order_id'    => $order->id,
-                'seat_id'     => $seat->id,
-                'showtime_id' => $showtime->id,
-                'user_id'     => Auth::id(),
-            ]);
+        $order->seats()->sync($request->kursi);
 
-            $seat->update(['status' => 'booked']);
-        }
+        Seat::whereIn('id', $request->kursi)->update(['status' => 'booked']);
 
-        $kursiText = $seats->pluck('nomor_kursi')->join(', ');
-
-        return redirect()->route('home')
-            ->with('success', "Pemesanan berhasil. Kursi Anda: {$kursiText} (Total Rp " .
-                number_format($order->total_harga, 0, ',', '.') . ")");
+        return redirect()->route('my-orders')->with('success', 'Pemesanan berhasil!');
     }
 }

@@ -5,18 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Seat;
 use App\Models\Order;
 use App\Models\Showtime;
-use App\Models\OrderDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
 {
-    public function create($showtime_id)
+    public function myOrders()
     {
-        $showtime = Showtime::with('film')->findOrFail($showtime_id);
-        $seats = Seat::where('showtime_id', $showtime_id)->get();
+        $orders = Order::with('seats', 'showtime.film')
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->get();
 
-        return view('orders.create', compact('showtime', 'seats'));
+        return view('frontend.my-orders', compact('orders'));
     }
 
     public function store(Request $request)
@@ -31,6 +32,7 @@ class OrderController extends Controller
         ]);
 
         $showtime = Showtime::with('seats')->findOrFail($request->showtime_id);
+        $totalHarga = $showtime->harga * $request->jumlah_tiket;
 
         // Pastikan kursi yang dipilih statusnya available
         $invalidSeats = Seat::whereIn('id', $request->kursi)
@@ -45,32 +47,24 @@ class OrderController extends Controller
             return back()->withErrors(['jumlah_tiket' => 'Jumlah kursi harus sama dengan jumlah tiket.'])->withInput();
         }
 
-        // Simpan order (contoh)
-
-
+        // Buat order utama
         $order = Order::create([
             'user_id'      => Auth::id(),
             'showtime_id'  => $showtime->id,
             'jumlah_tiket' => $request->jumlah_tiket,
-            'total_harga'  => $showtime->harga * $request->jumlah_tiket,
-            'tanggal'      => $showtime->tanggal,
-            'jam'           => $showtime->jam,
-            // isi dari showtime
+            'total_harga'  => $totalHarga,
             'status'       => 'pending',
         ]);
 
+        // Hubungkan order dengan kursi yang dipilih
+        $order->seats()->sync($request->kursi);
 
-        foreach ($request->kursi as $seatId) {
-            OrderDetail::create([
-                'order_id' => $order->id,
-                'seat_id'  => $seatId,
-                'harga'    => $showtime->harga
-            ]);
+        // Update status kursi menjadi 'booked'
+        Seat::whereIn('id', $request->kursi)->update(['status' => 'booked']);
 
-            // Update status kursi jadi booked
-            Seat::where('id', $seatId)->update(['status' => 'booked']);
-        }
+        $kursiText = Seat::whereIn('id', $request->kursi)->pluck('nomor_kursi')->implode(', ');
 
-        return redirect()->route('orderSuccess', $order->id);
+        return redirect()->route('my-orders')
+            ->with('success', "Pemesanan berhasil! Kursi Anda: {$kursiText}.");
     }
 }

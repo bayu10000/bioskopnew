@@ -6,6 +6,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\Widgets;
 use Filament\PanelProvider;
+use Filament\Facades\Filament;
 use Filament\Support\Colors\Color;
 use Filament\Http\Middleware\Authenticate;
 use Illuminate\Session\Middleware\StartSession;
@@ -18,14 +19,18 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
+use Illuminate\Support\Facades\Auth;
 
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->id('admin')   // ✅ ID unik
-            ->path('admin') // ✅ URL prefix untuk panel (http://127.0.0.1:8000/admin)
+            ->id('admin')
+            ->path('admin')
+            // ✅ Gunakan auth() method untuk mengonfigurasi guard.
+            // Filament akan secara otomatis menangani sesi berdasarkan guard.
+            ->authGuard('admin')
             ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
             ->default()
             ->login()

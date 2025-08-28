@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Order extends Model
 {
@@ -14,25 +14,21 @@ class Order extends Model
         'showtime_id',
         'jumlah_tiket',
         'total_harga',
-        'tanggal',
         'status',
     ];
 
-    // Relasi ke Showtime
-    public function showtime()
-    {
-        return $this->belongsTo(Showtime::class);
-    }
-
-    // Relasi ke User (kalau pakai Auth)
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // Relasi ke OrderDetail
-    public function details()
+    public function showtime()
     {
-        return $this->hasMany(OrderDetail::class);
+        return $this->belongsTo(Showtime::class);
+    }
+
+    public function seats()
+    {
+        return $this->belongsToMany(Seat::class, 'order_details');
     }
 }

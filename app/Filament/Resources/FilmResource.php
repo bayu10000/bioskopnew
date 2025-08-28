@@ -28,25 +28,22 @@ class FilmResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-        ->schema([
-            TextInput::make('judul')->required(),
-            Textarea::make('sinopsis')->required(),
-            TextInput::make('genre')->required(),
-            TextInput::make('durasi')->numeric()->required(),
-            TextInput::make('link_trailer')
-            ->label('Link Trailer (YouTube)')
-            ->url()
-            ->placeholder('Link Trailer')
-            ->nullable(),
-
-
-            FileUpload::make('poster')
-                ->label('Poster Film')
-                ->image()
-                ->directory('posters')
-                ->required(),
-            
-        ]);
+            ->schema([
+                TextInput::make('judul')->required(),
+                Textarea::make('sinopsis')->required(),
+                TextInput::make('genre')->required(),
+                TextInput::make('durasi')->numeric()->required(),
+                TextInput::make('link_trailer')
+                    ->label('Link Trailer (YouTube)')
+                    ->url()
+                    ->placeholder('Link Trailer')
+                    ->nullable(),
+                FileUpload::make('poster')
+                    ->label('Poster Film')
+                    ->image()
+                    ->directory('posters')
+                    ->required(),
+            ]);
     }
 
     public static function table(Table $table): Table
@@ -56,14 +53,14 @@ class FilmResource extends Resource
                 TextColumn::make('judul')
                     ->searchable()
                     ->sortable(),
-    
+
                 TextColumn::make('sinopsis')
-                    ->limit(50) // biar nggak kepanjangan di tabel
-                    ->wrap(),   // kalau mau wrap text
-                 
+                    ->limit(50)
+                    ->wrap(),
+
                 TextColumn::make('genre')
                     ->sortable(),
-    
+
                 TextColumn::make('durasi')
                     ->label('Durasi (menit)')
                     ->sortable(),
@@ -79,7 +76,7 @@ class FilmResource extends Resource
                 Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
-    
+
 
     public static function getRelations(): array
     {

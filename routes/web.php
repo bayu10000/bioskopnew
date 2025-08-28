@@ -1,22 +1,38 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\AuthController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\OrderController;
 
+// ======================
 // Auth (manual)
-Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
-Route::post('/register', [AuthController::class, 'register']);
-Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
+// ======================
+Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register.form');
+Route::post('/register', [AuthController::class, 'register'])->name('register');
+
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login.form');
+Route::post('/login', [AuthController::class, 'login'])->name('login');
+
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Halaman publik
+// ======================
+// Public (tanpa login)
+// ======================
 Route::get('/', [FrontendController::class, 'index'])->name('home');
 
+Route::get('/film/{id}', [FrontendController::class, 'showFilm'])->name('film.show');
+
+// ======================
 // Booking (wajib login)
+// ======================
 Route::middleware('auth')->group(function () {
-    Route::get('/film/{id}', [FrontendController::class, 'showFilm'])->name('film.show');
-    Route::get('/order/{showtime}', [FrontendController::class, 'order'])->name('order');
-    Route::post('/order/store', [FrontendController::class, 'storeOrder'])->name('storeOrder');
+    // form pemesanan
+    Route::get('/order/{showtimeId}', [FrontendController::class, 'order'])->name('order.create');
+
+    // simpan pemesanan
+    Route::post('/order/store', [OrderController::class, 'store'])->name('order.store');
+
+    // halaman pesanan saya
+    Route::get('/my-orders', [OrderController::class, 'myOrders'])->name('my-orders');
 });

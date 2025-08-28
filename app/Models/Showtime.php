@@ -2,23 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Ruangan;
 
 class Showtime extends Model
 {
-
-    protected $fillable = ['film_id', 'tanggal', 'jam', 'harga', 'ruangan_id'];
+    protected $fillable = ['film_id', 'ruangan_id', 'tanggal', 'jam', 'harga'];
 
     public function film()
     {
         return $this->belongsTo(Film::class);
     }
 
-    public function orderDetails()
+    public function ruangan()
     {
-        return $this->hasMany(OrderDetail::class);
+        return $this->belongsTo(Ruangan::class);
     }
 
     public function seats()
@@ -26,8 +23,8 @@ class Showtime extends Model
         return $this->hasMany(Seat::class);
     }
 
-    public function ruangan()
+    public function orderDetails()
     {
-        return $this->belongsTo(Ruangan::class, 'ruangan_id');
+        return $this->hasMany(OrderDetail::class);
     }
 }

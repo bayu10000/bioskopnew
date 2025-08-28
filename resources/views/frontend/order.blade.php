@@ -17,7 +17,7 @@
         </div>
     @endif
 
-    <form action="{{ route('storeOrder') }}" method="POST" id="orderForm">
+    <form action="{{ route('order.store') }}" method="POST" id="orderForm">
         @csrf
         <input type="hidden" name="showtime_id" value="{{ $showtime->id }}">
         <input type="hidden" id="harga_tiket" value="{{ $showtime->harga }}">
