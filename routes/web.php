@@ -20,15 +20,15 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Public (tanpa login)
 // ======================
 Route::get('/', [FrontendController::class, 'index'])->name('home');
-
 Route::get('/film/{id}', [FrontendController::class, 'showFilm'])->name('film.show');
+Route::get('/profile', [FrontendController::class, 'profile'])->name('profile');
 
 // ======================
 // Booking (wajib login)
 // ======================
 Route::middleware('auth')->group(function () {
     // form pemesanan
-    Route::get('/order/{showtimeId}', [FrontendController::class, 'order'])->name('order.create');
+    Route::get('/order/{showtimeId}', [OrderController::class, 'show'])->name('order.show');
 
     // simpan pemesanan
     Route::post('/order/store', [OrderController::class, 'store'])->name('order.store');

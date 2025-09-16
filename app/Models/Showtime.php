@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Showtime extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['film_id', 'ruangan_id', 'tanggal', 'jam', 'harga'];
 
     public function film()
@@ -26,5 +29,10 @@ class Showtime extends Model
     public function orderDetails()
     {
         return $this->hasMany(OrderDetail::class);
+    }
+
+    public function order()
+    {
+        return $this->hasMany(Order::class);
     }
 }

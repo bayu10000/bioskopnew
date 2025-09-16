@@ -2,20 +2,22 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
 use App\Models\Film;
-use App\Models\Ruangan;
-use Filament\Tables;
 use App\Models\Showtime;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
+use App\Models\Ruangan;
+use Filament\Forms;
+use Filament\Tables;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TimePicker;
+use Filament\Forms\Get;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\ShowtimeResource\Pages;
+use Illuminate\Validation\Rules\Unique; // ✅ Import Unique Rule
 
 class ShowtimeResource extends Resource
 {
@@ -30,25 +32,55 @@ class ShowtimeResource extends Resource
                 Select::make('film_id')
                     ->label('Film')
                     ->relationship('film', 'judul')
-                    ->required(),
+                    ->required()
+                    ->live()
+                    ->preload()
+                    ->unique(ignoreRecord: true, modifyRuleUsing: function (Unique $rule, Get $get) {
+                        return $rule->where('ruangan_id', $get('ruangan_id'))
+                            ->where('tanggal', $get('tanggal'))
+                            ->where('jam', $get('jam'));
+                    }),
 
                 Select::make('ruangan_id')
                     ->label('Ruangan')
                     ->relationship('ruangan', 'nama')
-                    ->required(),
+                    ->required()
+                    ->unique(ignoreRecord: true, modifyRuleUsing: function (Unique $rule, Get $get) {
+                        return $rule->where('film_id', $get('film_id'))
+                            ->where('tanggal', $get('tanggal'))
+                            ->where('jam', $get('jam'));
+                    }),
 
                 DatePicker::make('tanggal')
                     ->label('Tanggal')
-                    ->required(),
+                    ->required()
+                    ->unique(ignoreRecord: true, modifyRuleUsing: function (Unique $rule, Get $get) {
+                        return $rule->where('film_id', $get('film_id'))
+                            ->where('ruangan_id', $get('ruangan_id'))
+                            ->where('jam', $get('jam'));
+                    })
+                    ->minDate(function (Get $get) {
+                        $film = Film::find($get('film_id'));
+                        return $film ? $film->tanggal_mulai : now();
+                    })
+                    ->maxDate(function (Get $get) {
+                        $film = Film::find($get('film_id'));
+                        return $film ? $film->tanggal_selesai : null;
+                    }),
 
                 TimePicker::make('jam')
-                    ->label('Jam')
-                    ->required(),
+                    ->label('Jam Tayang')
+                    ->required()
+                    ->unique(ignoreRecord: true, modifyRuleUsing: function (Unique $rule, Get $get) {
+                        return $rule->where('film_id', $get('film_id'))
+                            ->where('ruangan_id', $get('ruangan_id'))
+                            ->where('tanggal', $get('tanggal'));
+                    }),
 
                 TextInput::make('harga')
-                    ->label('Harga')
-                    ->numeric()
-                    ->required(),
+                    ->label('Harga Tiket')
+                    ->required()
+                    ->numeric(),
             ]);
     }
 
@@ -67,7 +99,9 @@ class ShowtimeResource extends Resource
                 Tables\Columns\TextColumn::make('tanggal')
                     ->date()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('jam'),
+
                 Tables\Columns\TextColumn::make('harga')
                     ->label('Harga')
                     ->money('IDR')
@@ -94,9 +128,9 @@ class ShowtimeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListShowtimes::route('/'),
+            'index' => Pages\ListShowtimes::route('/'),
             'create' => Pages\CreateShowtime::route('/create'),
-            'edit'   => Pages\EditShowtime::route('/{record}/edit'),
+            'edit' => Pages\EditShowtime::route('/{record}/edit'),
         ];
     }
 }

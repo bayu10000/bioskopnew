@@ -15,6 +15,8 @@ class Order extends Model
         'jumlah_tiket',
         'total_harga',
         'status',
+        'tanggal',
+        'jam', // ✅ Tambahkan ini
     ];
 
     public function user()

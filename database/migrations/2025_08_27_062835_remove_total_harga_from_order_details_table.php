@@ -8,16 +8,21 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('order_details', function (Blueprint $table) {
-            $table->dropColumn('total_harga');
-        });
+        // Periksa apakah kolom 'total_harga' ada sebelum mencoba menghapusnya
+        if (Schema::hasColumn('order_details', 'total_harga')) {
+            Schema::table('order_details', function (Blueprint $table) {
+                $table->dropColumn('total_harga');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('order_details', function (Blueprint $table) {
-            // Jangan lupa tambahkan kembali kolom jika perlu
-            $table->string('total_harga');
-        });
+        // Periksa apakah kolom 'total_harga' tidak ada sebelum menambahkannya kembali
+        if (!Schema::hasColumn('order_details', 'total_harga')) {
+            Schema::table('order_details', function (Blueprint $table) {
+                $table->string('total_harga')->nullable(); // Menambahkannya kembali jika di-rollback
+            });
+        }
     }
 };

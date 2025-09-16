@@ -47,10 +47,6 @@ class OrderResource extends Resource
                 Tables\Columns\TextColumn::make('seats.nomor_kursi')
                     ->label('Nomor Kursi')
                     ->badge()
-                    // ❌ Hapus baris di bawah ini
-                    // ->formatStateUsing(function ($state) {
-                    //     return implode(', ', $state);
-                    // })
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
@@ -60,9 +56,12 @@ class OrderResource extends Resource
                         'cancelled' => 'danger',
                     ])
                     ->sortable(),
-                Tables\Columns\TextColumn::make('tanggal')
+                Tables\Columns\TextColumn::make('tanggal') // ✅ Mengambil langsung dari model Order
                     ->label('Tanggal')
                     ->date()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('jam') // ✅ Tambahkan kolom jam
+                    ->label('Jam')
                     ->sortable(),
             ])
             ->filters([
