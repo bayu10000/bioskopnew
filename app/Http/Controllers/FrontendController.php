@@ -16,24 +16,32 @@ class FrontendController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Film::query();
+        $query = Film::with(['genres', 'showtimes']); // eager load biar tidak N+1
 
-        // Logika Search
-        if ($request->filled('search')) {
-            $query->where('judul', 'like', '%' . $request->input('search') . '%');
-        }
-
-        // Ambil semua genre unik
-        $genres = Genre::all();
-
-        // Filter berdasarkan genre
+        // Filter berdasarkan genre (jika dipilih)
         if ($request->filled('genre')) {
-            $query->whereHas('genres', function ($q) use ($request) {
-                $q->where('genres.id', $request->input('genre'));
+            $genreId = $request->input('genre');
+            $query->whereHas('genres', function ($q) use ($genreId) {
+                $q->where('genres.id', $genreId);
             });
         }
 
-        $films = $query->paginate(9);
+        // Logika Search (judul & sinopsis misalnya)
+        if ($request->filled('search')) {
+            $keyword = $request->input('search');
+            $query->where(function ($q) use ($keyword) {
+                $q->where('judul', 'like', '%' . $keyword . '%')
+                    ->orWhere('sinopsis', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        // Ambil semua genre untuk filter di view
+        $genres = Genre::all();
+
+        // Pagination + appends query biar param search/genre tetap ada
+        $films = $query->orderBy('created_at', 'desc')
+            ->paginate(9)
+            ->appends($request->only(['search', 'genre']));
 
         return view('frontend.index', compact('films', 'genres'));
     }
@@ -43,29 +51,16 @@ class FrontendController extends Controller
      */
     public function showFilm($id, Request $request)
     {
-        // Temukan film berdasarkan ID atau tampilkan 404 jika tidak ditemukan
         $film = Film::with('genres')->findOrFail($id);
 
-        // Ambil semua tanggal unik yang memiliki jadwal tayang untuk film ini, urutkan
         $showtimeDates = $film->showtimes()
             ->distinct()
             ->pluck('tanggal')
-            ->sortBy(function ($date) {
-                return Carbon::parse($date);
-            });
+            ->sortBy(fn($date) => Carbon::parse($date));
 
-        $selectedDate = null;
+        $selectedDate = $request->input('date', $showtimeDates->first());
+
         $showtimes = collect();
-
-        // Jika ada tanggal yang dipilih dari form
-        if ($request->filled('date')) {
-            $selectedDate = $request->input('date');
-        } else {
-            // Jika tidak ada tanggal yang dipilih, pilih tanggal pertama dari daftar
-            $selectedDate = $showtimeDates->first();
-        }
-
-        // Jika ada tanggal yang dipilih, ambil jadwal tayangnya
         if ($selectedDate) {
             $showtimes = Showtime::with('ruangan')
                 ->where('film_id', $film->id)

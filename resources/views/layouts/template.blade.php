@@ -43,7 +43,7 @@
             <div class="row">
                 <div class="col-lg-2">
                     <div class="header__logo">
-                        <a href="{{ route('home') }}" class="logo-text">
+                        <a href="{{ route('profile') }}" class="logo-text">
                             <span class="chine">CINE</span><span class="phile">PHILE</span>
                         </a>
                         
@@ -74,7 +74,8 @@
                                 <li class="{{ Route::currentRouteName() == 'profile' ? 'active' : '' }}">
                                     <a href="{{ route('profile') }}">Homepage</a>
                                 </li>
-                                <li class="{{ in_array(Route::currentRouteName(), ['home', 'film.show']) ? 'active' : '' }}">
+                                {{-- PERBAIKAN: Tambahkan rute 'order.show' ke dalam kondisi aktif untuk 'Film' --}}
+                                <li class="{{ in_array(Route::currentRouteName(), ['home', 'film.show', 'order.show', 'order.store']) ? 'active' : '' }}">
                                     <a href="{{ route('home') }}">Film</a>
                                 </li>
                                 
@@ -89,6 +90,7 @@
                                     </ul> --}}
                                 </li>
                                 @auth
+                                    {{-- PERBAIKAN: 'Pesanan Saya' hanya aktif pada rute my-orders --}}
                                     <li class="{{ Route::currentRouteName() == 'my-orders' ? 'active' : '' }}"><a href="{{ route('my-orders') }}">Pesanan Saya</a></li>
                                 @endauth
                             </ul>
@@ -136,8 +138,9 @@
                 <div class="col-lg-6">
                     <div class="footer__nav">
                         <ul>
-                            <li class="{{ Route::currentRouteName() == 'home' ? 'active' : '' }}"><a href="{{ route('home') }}">Homepage</a></li>
-                            <li><a href="#">Categories</a></li>
+                            <li class="{{ Route::currentRouteName() == 'profile' ? 'active' : '' }}"><a href="{{ route('profile') }}">Homepage</a></li>
+                            <li><a href="index">Film</a></li>
+                            <li><a href="my-orders">Pesanan Saya</a></li>
                         </ul>
                     </div>
                 </div>

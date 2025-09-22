@@ -56,12 +56,9 @@ class OrderResource extends Resource
                         'cancelled' => 'danger',
                     ])
                     ->sortable(),
-                Tables\Columns\TextColumn::make('tanggal') // ✅ Mengambil langsung dari model Order
-                    ->label('Tanggal')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('jam') // ✅ Tambahkan kolom jam
-                    ->label('Jam')
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Waktu Pembelian')
+                    ->dateTime('d-m-Y H:i') // contoh: 22-09-2025 14:35
                     ->sortable(),
             ])
             ->filters([

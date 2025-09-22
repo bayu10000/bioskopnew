@@ -19,9 +19,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // ======================
 // Public (tanpa login)
 // ======================
-Route::get('/', [FrontendController::class, 'index'])->name('home');
+Route::get('/', [FrontendController::class, 'profile'])->name('profile');
+Route::get('/index', [FrontendController::class, 'index'])->name('home');
 Route::get('/film/{id}', [FrontendController::class, 'showFilm'])->name('film.show');
-Route::get('/profile', [FrontendController::class, 'profile'])->name('profile');
+
 
 // ======================
 // Booking (wajib login)

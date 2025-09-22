@@ -6,85 +6,93 @@ use App\Models\Seat;
 use App\Models\Order;
 use App\Models\Showtime;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    /**
-     * Menampilkan halaman pemesanan tiket untuk showtime tertentu.
-     */
     public function show($showtimeId)
     {
-        // Temukan showtime berdasarkan ID dan muat relasi yang diperlukan
-        $showtime = Showtime::with('film', 'ruangan', 'seats')
-            ->findOrFail($showtimeId);
+        $showtime = Showtime::with(['film', 'ruangan', 'seats'])->findOrFail($showtimeId);
+        $availableCount = $showtime->seats()->where('status', 'available')->count();
 
-        // Ambil kursi yang berstatus 'available'
-        $availableSeats = $showtime->seats()->where('status', 'available')->get();
-        $availableCount = $availableSeats->count();
+        $seatsForJs = $showtime->seats->map(fn($seat) => [
+            'id' => $seat->id,
+            'nomor_kursi' => $seat->nomor_kursi,
+            'status' => $seat->status,
+        ])->values();
 
-        return view('frontend.order', compact('showtime', 'availableSeats', 'availableCount'));
+        return view('frontend.order', compact('showtime', 'availableCount', 'seatsForJs'));
     }
 
-    /**
-     * Simpan pesanan baru ke database.
-     */
     public function store(Request $request)
     {
-        // Validasi input dari form
+        // 1. Validasi permintaan
         $request->validate([
-            'showtime_id'   => 'required|exists:showtimes,id',
-            'kursi'         => 'required|array|min:1',
-            'kursi.*'       => 'distinct|exists:seats,id',
-        ], [
-            'kursi.required' => 'Anda harus memilih setidaknya satu kursi.',
-            'kursi.min'      => 'Anda harus memilih setidaknya satu kursi.',
-            'kursi.*.distinct' => 'Kursi tidak boleh sama.',
+            'showtime_id' => 'required|exists:showtimes,id',
+            'selected_seats' => 'required|array|min:1',
+            'selected_seats.*' => 'required|exists:seats,id',
         ]);
 
-        // Cari data showtime dan film terkait
-        $showtime = Showtime::with('seats', 'film')->findOrFail($request->showtime_id);
+        $showtimeId = $request->input('showtime_id');
+        $selectedSeatIds = $request->input('selected_seats');
 
-        // Ambil jumlah tiket dari jumlah kursi yang dipilih
-        $jumlahTiket = count($request->kursi);
-        $totalHarga = $showtime->harga * $jumlahTiket;
+        // Gunakan transaksi untuk memastikan semua operasi berhasil atau tidak sama sekali
+        DB::beginTransaction();
 
-        // Cek apakah ada kursi yang sudah tidak tersedia
-        $invalidSeats = Seat::whereIn('id', $request->kursi)
-            ->where('status', '!=', 'available')
-            ->count();
+        try {
+            // Ambil data showtime dan kursi di dalam transaksi
+            $showtime = Showtime::find($showtimeId);
+            $seats = Seat::whereIn('id', $selectedSeatIds)->get();
 
-        if ($invalidSeats > 0) {
-            return back()->withErrors(['kursi' => 'Ada kursi yang sudah terbooking. Silakan pilih ulang.'])->withInput();
+            // Verifikasi kursi masih tersedia dan milik showtime yang sama
+            foreach ($seats as $seat) {
+                if ($seat->showtime_id != $showtimeId || $seat->status !== 'available') {
+                    DB::rollBack();
+                    return redirect()->back()->with('error', 'Salah satu kursi yang Anda pilih sudah tidak tersedia.');
+                }
+            }
+
+            // Hitung total harga
+            $totalPrice = $showtime->harga * count($selectedSeatIds);
+
+            // Buat pesanan baru
+            $order = Order::create([
+                'user_id' => Auth::id(),
+                'showtime_id' => $showtimeId,
+                'jumlah_tiket' => count($selectedSeatIds),
+                'total_harga' => $totalPrice,
+                'status' => 'pending',
+            ]);
+
+            // Periksa apakah pesanan berhasil dibuat
+            if (!$order) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'Gagal membuat pesanan. Silakan coba lagi.');
+            }
+
+            // Perbarui status kursi menjadi 'booked'
+            Seat::whereIn('id', $selectedSeatIds)
+                ->update(['status' => 'booked']);
+
+            // Lampirkan kursi ke pesanan melalui tabel pivot
+            // Ini akan secara otomatis mengisi 'order_id' dan 'seat_id'
+            $order->seats()->attach($selectedSeatIds);
+
+            // Jika semua operasi berhasil, commit transaksi
+            DB::commit();
+
+            return redirect()->route('my-orders')->with('success', 'Pemesanan berhasil!');
+        } catch (\Exception $e) {
+            // Jika ada kesalahan, batalkan semua operasi
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memproses pesanan. Silakan coba lagi.');
         }
-
-        // Buat pesanan baru
-        $order = Order::create([
-            'user_id'      => Auth::id(),
-            'showtime_id'  => $showtime->id,
-            'jumlah_tiket' => $jumlahTiket,
-            'total_harga'  => $totalHarga,
-            'status'       => 'pending',
-            'tanggal'      => $showtime->tanggal,
-            'jam'          => $showtime->jam,
-        ]);
-
-        // Hubungkan pesanan dengan kursi yang dipilih
-        $order->seats()->sync($request->kursi);
-
-        // Perbarui status kursi menjadi 'booked'
-        Seat::whereIn('id', $request->kursi)->update(['status' => 'booked']);
-
-        // Ambil nomor kursi untuk pesan sukses
-        $kursiText = Seat::whereIn('id', $request->kursi)->pluck('nomor_kursi')->implode(', ');
-
-        return redirect()->route('my-orders')->with('success', 'Pemesanan berhasil! Silakan lakukan pembayaran untuk menyelesaikan transaksi. Nomor kursi Anda: ' . $kursiText);
     }
 
     public function myOrders()
     {
-        $orders = Order::with('seats', 'showtime.film')
+        $orders = Order::with(['user', 'seats', 'showtime.film', 'showtime.ruangan'])
             ->where('user_id', Auth::id())
             ->latest()
             ->get();

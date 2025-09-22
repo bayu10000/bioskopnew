@@ -58,14 +58,18 @@ class OrderDetailResource extends Resource
                     ->label('Film')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('order.showtime.tanggal') // ✅ PERBAIKAN DI SINI
-                    ->label('Tanggal')
-                    ->date()
+                Tables\Columns\TextColumn::make('order.showtime.tanggal')
+                    ->label('Jadwal Tayang')
+                    ->getStateUsing(function ($record) {
+                        if ($record->order && $record->order->showtime) {
+                            return \Carbon\Carbon::parse($record->order->showtime->tanggal)->format('d-m-Y')
+                                . ' ' .
+                                $record->order->showtime->jam;
+                        }
+                        return '-';
+                    })
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('order.showtime.jam') // ✅ PERBAIKAN DI SINI
-                    ->label('Jam')
-                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('seat.nomor_kursi') // ✅ Tetap sama karena relasi langsung
                     ->label('Nomor Kursi')

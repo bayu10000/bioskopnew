@@ -118,7 +118,7 @@
 
         {{-- Jadwal Tayang Berdasarkan Tanggal --}}
         <div class="row">
-            <div class="col-lg-12">
+            <div class="col-lg-12 text-black">
                 @if ($showtimes->count() > 0)
                     <div class="product__page__content">
                         <div class="row">
@@ -129,7 +129,8 @@
                                             <h6>{{ \Carbon\Carbon::parse($showtime->jam)->format('H:i') }} WIB</h6>
                                         </div>
                                         <div class="showtime-details">
-                                            <p><strong>Studio:</strong> {{ $showtime->ruangan->nama_ruangan }}</p>
+                                            {{-- PERBAIKAN: Ganti 'nama_ruangan' dengan 'nama' --}}
+                                            <p><strong>Studio:</strong> {{ $showtime->ruangan->nama }}</p> 
                                             <p><strong>Harga:</strong> Rp {{ number_format($showtime->harga, 0, ',', '.') }}</p>
                                         </div>
                                         <div class="showtime-action mt-auto">
@@ -235,6 +236,52 @@
     height: 50px;
     line-height: 50px;
 }
+
+/* KODE TAMBAHAN UNTUK MEMPERBAIKI WARNA TEKS TANGGAL */
+.nice-select .list li {
+    color: #000; /* Menetapkan warna teks hitam untuk semua item di dropdown */
+}
+<style>
+/* Bagian ini untuk legend dan screen, sudah benar */
+.seat-selection-section {
+    background-color: #0d0d0d;
+    padding: 30px;
+    border-radius: 8px;
+    color: #fff;
+}
+.seat-legend { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; }
+.seat-legend .seat { width: 20px; height: 20px; border-radius: 4px; display: inline-block; margin-right: 5px; }
+.screen-indicator { background-color: #555; color: #eee; text-align: center; padding: 10px 0; border-radius: 5px; font-weight: bold; margin-bottom: 30px; }
+.seat-table { border-collapse: collapse; margin: 0 auto; }
+.seat-table th, .seat-table td { padding: 4px; text-align: center; }
+.seat-table th { color: #aaa; font-size: 12px; font-weight: bold; }
+.seat-wrapper { position: relative; }
+
+/* CSS UTAMA UNTUK WARNA KURSI */
+.seat {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 14px;
+    /* Tambahkan warna default untuk nomor kursi agar terlihat */
+    color: white; 
+}
+.seat.available, .seat-legend .available {
+    background-color: #28a745; /* Hijau untuk tersedia */
+}
+.seat.booked, .seat-legend .booked {
+    background-color: #dc3545; /* Merah untuk dipesan */
+    cursor: not-allowed;
+}
+.seat.selected, .seat-legend .selected {
+    background-color: #007bff; /* Biru untuk dipilih */
+}
+</style>
 </style>
 
 @endsection

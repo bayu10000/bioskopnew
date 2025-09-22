@@ -15,8 +15,6 @@ class Order extends Model
         'jumlah_tiket',
         'total_harga',
         'status',
-        'tanggal',
-        'jam', // ✅ Tambahkan ini
     ];
 
     public function user()
@@ -31,6 +29,6 @@ class Order extends Model
 
     public function seats()
     {
-        return $this->belongsToMany(Seat::class, 'order_details');
+        return $this->belongsToMany(Seat::class, 'order_details')->withTimestamps();
     }
 }
