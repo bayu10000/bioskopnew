@@ -13,11 +13,9 @@ class RuanganSeeder extends Seeder
     public function run(): void
     {
         $ruanganData = [
-            ['nama' => 'Ruangan 1', 'kapasitas' => 200],
-            ['nama' => 'Ruangan 2', 'kapasitas' => 200],
-            ['nama' => 'Ruangan 3', 'kapasitas' => 200],
-            ['nama' => 'Ruangan 4', 'kapasitas' => 200],
-            ['nama' => 'Ruangan 5', 'kapasitas' => 200],
+            ['nama' => 'Ruangan 1', 'kapasitas' => 100],
+            ['nama' => 'Ruangan 2', 'kapasitas' => 100],
+            ['nama' => 'Ruangan 3', 'kapasitas' => 100],
         ];
 
         // Gunakan updateOrCreate agar aman dari foreign key dan tidak butuh truncate

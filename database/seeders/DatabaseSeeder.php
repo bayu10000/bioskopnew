@@ -8,13 +8,12 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Urutan: Film harus dulu karena Showtime tergantung Film.
         $this->call([
-            // FilmSeeder::class,
+            GenreSeeder::class,
             RuanganSeeder::class,
-            SeatSeeder::class,
-            ShowtimeSeeder::class,
-            // Seeder lain...
+            // FilmSeeder::class,     // pastikan FilmSeeder diaktifkan agar film ter-seed
+            SeatSeeder::class,     // buat template kursi per ruangan
+            ShowtimeSeeder::class, // buat showtime + kursi per showtime
         ]);
     }
 }

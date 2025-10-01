@@ -9,7 +9,7 @@ class Film extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['judul', 'sinopsis', 'durasi', 'link_trailer', 'poster', 'tanggal_mulai', 'tanggal_selesai'];
+    protected $fillable = ['judul', 'sinopsis', 'durasi', 'link_trailer', 'poster', 'tanggal_mulai', 'tanggal_selesai', 'aktor', 'sutradara'];
 
     public function showtimes()
     {

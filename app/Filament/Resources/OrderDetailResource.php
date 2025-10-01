@@ -58,6 +58,12 @@ class OrderDetailResource extends Resource
                     ->label('Film')
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('order.showtime.ruangan.nama')
+                    ->label('Ruangan')
+                    ->sortable()
+                    ->searchable(),
+
+
                 Tables\Columns\TextColumn::make('order.showtime.tanggal')
                     ->label('Jadwal Tayang')
                     ->getStateUsing(function ($record) {

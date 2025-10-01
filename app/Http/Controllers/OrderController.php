@@ -22,8 +22,22 @@ class OrderController extends Controller
             'status' => $seat->status,
         ])->values();
 
-        return view('frontend.order', compact('showtime', 'availableCount', 'seatsForJs'));
+        // Tambahkan logika warna/icon ruangan
+        $warnaRuangan = match ($showtime->ruangan->nama) {
+            'Studio 1' => 'fa fa-door-open text-danger',
+            'Studio 2' => 'fa fa-door-open text-success',
+            'Studio 3' => 'fa fa-door-open text-warning',
+            default    => 'fa fa-door-open text-primary',
+        };
+
+        return view('frontend.order', compact(
+            'showtime',
+            'availableCount',
+            'seatsForJs',
+            'warnaRuangan'
+        ));
     }
+
 
     public function store(Request $request)
     {

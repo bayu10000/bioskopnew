@@ -1,14 +1,11 @@
 @extends('layouts.template')
 
 @section('content')
-<section class="normal-breadcrumb spad set-bg" data-setbg="{{ asset('img/normal-breadcrumb.jpg') }}">
+<section class="normal-breadcrumb spad set-bg" data-setbg="{{ asset('img/login.png') }}">
     <div class="container">
         <div class="row">
             <div class="col-lg-12 text-center">
-                <div class="normal__breadcrumb__text">
-                    <h2>Login</h2>
-                    <p>Welcome to the official Anime blog.</p>
-                </div>
+               
             </div>
         </div>
     </div>

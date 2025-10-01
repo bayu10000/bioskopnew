@@ -6,61 +6,89 @@ use Illuminate\Database\Seeder;
 use App\Models\Film;
 use App\Models\Ruangan;
 use App\Models\Showtime;
+use App\Models\Seat;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ShowtimeSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $films = Film::all();
         $ruangans = Ruangan::all();
 
         if ($films->isEmpty() || $ruangans->isEmpty()) {
-            $this->command->info('Tidak ada film atau ruangan. Jalankan FilmSeeder dan RuanganSeeder terlebih dahulu.');
+            $this->command->info('Tidak ada film atau ruangan. Jalankan seeder Film dan Ruangan terlebih dahulu.');
             return;
         }
 
-        $numberOfShowtimes = 50; // total showtime yang ingin dibuat
-        $jamSlots = ['10:00', '13:00', '16:00', '19:00', '21:00'];
+        // Hapus kursi & showtime lama
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        Seat::whereNotNull('showtime_id')->delete();
+        Showtime::truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        $created = 0;
-        for ($i = 0; $i < $numberOfShowtimes; $i++) {
-            $film = $films->random();
-            $ruangan = $ruangans->random();
+        $jams = ['10:00', '16:00', '19:00', '22:00']; // HARUS sama dengan dropdown
+        $createdShowtimes = 0;
+        $createdSeats = 0;
 
-            // Pilih tanggal acak dalam 1-14 hari ke depan (tidak mengubah objek yang sama)
-            $tanggal = Carbon::now()->addDays(rand(1, 14))->toDateString();
+        foreach ($films as $film) {
+            foreach ($ruangans as $ruangan) {
+                if (!$film->tanggal_mulai || !$film->tanggal_selesai) {
+                    continue;
+                }
 
-            // Pilih jam secara acak
-            $jam = $jamSlots[array_rand($jamSlots)];
+                $startDate = Carbon::parse($film->tanggal_mulai)->startOfDay();
+                $endDate = Carbon::parse($film->tanggal_selesai)->endOfDay();
 
-            $harga = rand(30000, 50000);
+                // Loop tanggal dari mulai sampai selesai
+                for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                    foreach ($jams as $jam) {
+                        $showtime = Showtime::firstOrCreate(
+                            [
+                                'film_id' => $film->id,
+                                'ruangan_id' => $ruangan->id,
+                                'tanggal' => $date->toDateString(),
+                                'jam' => $jam,
+                            ],
+                            [
+                                'harga' => 30000,
+                            ]
+                        );
 
-            // Cegah duplikat simple: sama film, ruangan, tanggal, jam
-            $exists = Showtime::where('film_id', $film->id)
-                ->where('ruangan_id', $ruangan->id)
-                ->where('tanggal', $tanggal)
-                ->where('jam', $jam)
-                ->exists();
+                        if ($showtime->wasRecentlyCreated) {
+                            $createdShowtimes++;
 
-            if ($exists) {
-                continue;
+                            // Generate seats sesuai kapasitas ruangan
+                            $kapasitas = (int) ($ruangan->kapasitas ?? 100);
+                            if ($kapasitas <= 0) {
+                                continue;
+                            }
+
+                            $allRows = range('A', 'Z');
+                            $rowCount = min(count($allRows), (int) ceil($kapasitas / 10));
+                            $rows = array_slice($allRows, 0, $rowCount);
+                            $colCount = (int) ceil($kapasitas / count($rows));
+
+                            for ($j = 1; $j <= $kapasitas; $j++) {
+                                $row = $rows[floor(($j - 1) / $colCount)];
+                                $col = ($j - 1) % $colCount + 1;
+                                $nomor_kursi = $row . $col;
+
+                                Seat::create([
+                                    'showtime_id' => $showtime->id,
+                                    'nomor_kursi' => $nomor_kursi,
+                                    'status' => 'available',
+                                    'harga' => 30000,
+                                ]);
+                                $createdSeats++;
+                            }
+                        }
+                    }
+                }
             }
-
-            Showtime::create([
-                'film_id' => $film->id,
-                'ruangan_id' => $ruangan->id,
-                'tanggal' => $tanggal,
-                'jam' => $jam,
-                'harga' => $harga,
-            ]);
-
-            $created++;
         }
 
-        $this->command->info("Showtime seeded: {$created} entries created.");
+        $this->command->info("Showtimes seeded: {$createdShowtimes}. Showtime seats seeded: {$createdSeats} (harga Rp 30.000).");
     }
 }

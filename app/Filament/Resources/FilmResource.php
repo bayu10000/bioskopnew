@@ -31,6 +31,8 @@ class FilmResource extends Resource
             ->schema([
                 TextInput::make('judul')->required(),
                 Textarea::make('sinopsis')->required(),
+                TextInput::make('aktor')->required(),
+                TextInput::make('sutradara')->required(),
 
                 Select::make('genres')
                     ->relationship('genres', 'nama')
@@ -59,6 +61,16 @@ class FilmResource extends Resource
 
                 TextColumn::make('genres.nama')
                     ->label('Genre')
+                    ->badge()
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('aktor')
+                    ->label('Aktor')
+                    ->badge()
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('sutradara')
+                    ->label('SUtradara')
                     ->badge()
                     ->searchable()
                     ->sortable(),

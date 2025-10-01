@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('seats', function (Blueprint $table) {
             $table->id();
-            // Kolom yang benar: menghubungkan kursi ke jadwal tayang (showtime)
-            $table->foreignId('showtime_id')->constrained()->onDelete('cascade');
+            // Kursi harus terkait ke ruangan, bukan ke showtime
+            $table->foreignId('ruangan_id')->constrained()->onDelete('cascade');
             $table->string('nomor_kursi'); // contoh: A1, B10
             $table->enum('status', ['available', 'booked'])->default('available');
             $table->timestamps();

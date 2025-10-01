@@ -2,48 +2,50 @@
 
 namespace Database\Seeders;
 
-use App\Models\Ruangan;
+use App\Models\Showtime;
 use App\Models\Seat;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class SeatSeeder extends Seeder
 {
     public function run(): void
     {
-        $ruangans = Ruangan::all();
+        $showtimes = Showtime::with('ruangan')->get();
 
-        if ($ruangans->isEmpty()) {
-            $this->command->info('Tidak ada ruangan. Jalankan RuanganSeeder terlebih dahulu.');
+        if ($showtimes->isEmpty()) {
+            $this->command->info('❌ Tidak ada showtime. Buat showtime dulu.');
             return;
         }
 
-        // Nonaktifkan FK sementara untuk operasi hapus massal
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        // Hapus kursi lama (pakai delete, bukan truncate biar aman dari FK order_details)
         Seat::query()->delete();
-        DB::statement('ALTER TABLE `seats` AUTO_INCREMENT = 1;');
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-
-        // Denah kursi
-        $rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-        $columns = 20;
-        $harga_tiket = 30000;
 
         $created = 0;
-        foreach ($ruangans as $ruangan) {
+
+        foreach ($showtimes as $showtime) {
+            $kapasitas = 100; // fix 100 kursi per ruangan
+            $rows = range('A', 'J'); // 10 baris (A–J)
+            $cols = 10; // 10 kolom per baris
+
+            $count = 0;
             foreach ($rows as $row) {
-                for ($col = 1; $col <= $columns; $col++) {
+                for ($col = 1; $col <= $cols; $col++) {
+                    if ($count >= $kapasitas) break 2;
+
                     Seat::create([
-                        'ruangan_id' => $ruangan->id,
+                        'showtime_id' => $showtime->id,
                         'nomor_kursi' => $row . $col,
-                        'status' => 'available',
-                        'harga' => $harga_tiket,
+                        'status'      => 'available',
                     ]);
+
+                    $count++;
                     $created++;
                 }
             }
+
+            $this->command->info("✔ Kursi untuk Showtime ID {$showtime->id} (Ruangan {$showtime->ruangan->nama}) berhasil dibuat: {$count}");
         }
 
-        $this->command->info("Seat seeded: {$created} seats across {$ruangans->count()} ruangan(s).");
+        $this->command->info("🎉 Total kursi dibuat: {$created}");
     }
 }

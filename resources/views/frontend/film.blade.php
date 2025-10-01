@@ -7,7 +7,7 @@
             <div class="col-lg-12">
                 <div class="breadcrumb__links">
                     <a href="{{ url('/') }}"><i class="fa fa-home"></i> Beranda</a>
-                    <a href="#">Film</a>
+                    <a href="{{ route('home') }}">Film</a> {{-- Tambahkan route('home') agar link "Film" bisa diklik --}}
                     <span>{{ $film->judul }}</span>
                 </div>
             </div>
@@ -18,7 +18,8 @@
     <div class="container">
         <div class="anime__details__content">
             <div class="row">
-                <div class="col-lg-3">
+                {{-- Kolom Poster (Responsif: 12 di XS, 4 di SM, 3 di LG) --}}
+                <div class="col-lg-3 col-md-4 col-sm-4 col-12 mb-4 mb-lg-0"> {{-- Diubah ke col-md-4 agar lebih proporsional --}}
                     <div class="anime__details__pic set-bg" data-setbg="{{ asset('storage/' . $film->poster) }}" style="background-image: url('{{ asset('storage/' . $film->poster) }}');">
                         <div class="ep">
                             @if($film->durasi)
@@ -31,7 +32,8 @@
                         <div class="view"><i class="fa fa-eye"></i> {{ $film->views ?? 0 }}</div>
                     </div>
                 </div>
-                <div class="col-lg-9">
+                {{-- Kolom Detail (Responsif: 12 di XS, 8 di SM, 9 di LG) --}}
+                <div class="col-lg-9 col-md-8 col-sm-8 col-12"> {{-- Diubah ke col-md-8 agar lebih proporsional --}}
                     <div class="anime__details__text">
                         <div class="anime__details__title">
                             <h3>{{ $film->judul }}</h3>
@@ -40,24 +42,21 @@
                         <p>{{ $film->sinopsis }}</p>
                         <div class="anime__details__widget">
                             <div class="row">
-                                <div class="col-lg-6 col-md-6">
+                                <div class="col-lg-6 col-md-6 col-sm-12">
                                     <ul>
-                                        {{-- <li><span>Status:</span> {{ $film->status }}</li> --}}
                                         <li><span>Genre:</span>
                                             @foreach($film->genres as $genre)
                                                 {{ $genre->nama }}{{ !$loop->last ? ', ' : '' }}
                                             @endforeach
                                         </li>
-                                        {{-- <li><span>Rilis:</span> {{ \Carbon\Carbon::parse($film->tanggal_rilis)->translatedFormat('d F Y') }}</li> --}}
                                         <li><span>Sutradara:</span> {{ $film->sutradara }}</li>
                                         <li><span>Aktor:</span> {{ $film->aktor }}</li>
                                     </ul>
                                 </div>
-                                <div class="col-lg-6 col-md-6">
+                                <div class="col-lg-6 col-md-6 col-sm-12">
                                     <ul>
                                         <li><span>Tanggal Mulai Tayang:</span> {{ \Carbon\Carbon::parse($film->tanggal_mulai)->translatedFormat('d F Y') }}</li>
                                         <li><span>Tanggal Selesai Tayang:</span> {{ \Carbon\Carbon::parse($film->tanggal_selesai)->translatedFormat('d F Y') }}</li>
-                                        {{-- <li><span>Umur:</span> {{ $film->batas_umur }}+</li> --}}
                                         <li><span>Harga Tiket:</span>
                                             @if($showtimes->isNotEmpty())
                                                 Rp {{ number_format($showtimes->first()->harga, 0, ',', '.') }}
@@ -81,15 +80,13 @@
                 </div>
             </div>
         </div>
+
+        {{-- Jadwal Tayang Section --}}
         <div class="row">
             <div class="col-lg-12">
                 <div class="product__page__title mt-5">
-                    <div class="row">
-                        <div class="col-lg-12 col-md-12 col-sm-12">
-                            <div class="section-title">
-                                <h4>Jadwal Tayang</h4>
-                            </div>
-                        </div>
+                    <div class="section-title">
+                        <h4>Jadwal Tayang</h4>
                     </div>
                 </div>
             </div>
@@ -100,6 +97,7 @@
             <div class="col-lg-12">
                 <form action="{{ route('film.show', $film->id) }}" method="GET" class="mb-4">
                     <div class="input-group">
+                        {{-- nice-select akan diinisialisasi oleh JS --}}
                         <select name="date" class="form-control nice-select">
                             <option value="">-- Pilih Tanggal --</option>
                             @foreach($showtimeDates as $date)
@@ -109,7 +107,7 @@
                             @endforeach
                         </select>
                         <div class="input-group-append">
-                            <button type="submit" class="btn btn-danger" style="border-radius:0 5px 5px 0; background-color: #e53637;">Filter</button>
+                            <button type="submit" class="btn btn-danger filter-btn-custom">Filter</button>
                         </div>
                     </div>
                 </form>
@@ -123,14 +121,22 @@
                     <div class="product__page__content">
                         <div class="row">
                             @foreach ($showtimes as $showtime)
-                                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                                @php
+                                    $warnaRuangan = match($showtime->ruangan->nama) {
+                                        'Ruangan 1' => 'text-primary', // biru
+                                        'Ruangan 2' => 'text-warning', // kuning
+                                        'Ruangan 3' => 'text-success', // hijau
+                                        default => 'text-light',
+                                    };
+                                @endphp
+                                {{-- Grid Responsif untuk Kartu Jadwal: 12/XS, 6/SM, 4/MD, 3/LG --}}
+                                <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-4">
                                     <div class="showtime-card">
                                         <div class="showtime-time">
                                             <h6>{{ \Carbon\Carbon::parse($showtime->jam)->format('H:i') }} WIB</h6>
                                         </div>
                                         <div class="showtime-details">
-                                            {{-- PERBAIKAN: Ganti 'nama_ruangan' dengan 'nama' --}}
-                                            <p><strong>Studio:</strong> {{ $showtime->ruangan->nama }}</p> 
+                                            <p><strong>Studio:</strong> <span class="{{ $warnaRuangan }}">{{ $showtime->ruangan->nama }}</span></p>
                                             <p><strong>Harga:</strong> Rp {{ number_format($showtime->harga, 0, ',', '.') }}</p>
                                         </div>
                                         <div class="showtime-action mt-auto">
@@ -152,11 +158,105 @@
                 @endif
             </div>
         </div>
+
+        {{-- Catatan: Bagian .seat-selection-section di bawah ini (kursi) tidak memiliki data yang di-loop. 
+             Jika Anda menggunakannya, pastikan data kursi dimuat di controller. --}}
+        
     </div>
 </section>
 
 {{-- Styling Tambahan --}}
 <style>
+/* 3. Style Poster Film - Disesuaikan dengan Rasio 2:3 */
+.anime__details__pic {
+    /* Tambahkan properti untuk membuat poster responsif pada semua ukuran */
+    width: 100%;
+    /* Menggunakan rasio 2:3 (3/2 * 100% = 150%) */
+    padding-top: 150%; 
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+/* 1. Responsif Input Group Filter */
+.input-group {
+    display: flex; /* Memastikan select dan button berada dalam satu baris */
+}
+.input-group .nice-select.form-control {
+    flex-grow: 1; /* Select akan mengambil sisa ruang */
+    border-radius: 5px 0 0 5px !important; /* Memperbaiki nice-select radius */
+}
+.input-group-append .filter-btn-custom {
+    border-radius: 0 5px 5px 0 !important;
+    background-color: #e53637;
+    height: 50px;
+    padding: 0 20px;
+    line-height: 50px;
+}
+/* Memperbaiki nice-select agar sesuai dengan tinggi tombol */
+.nice-select.form-control {
+    /* ... kode yang sudah ada ... */
+    height: 50px;
+    line-height: 50px;
+    /* ... kode yang sudah ada ... */
+}
+/* Nice-select untuk layar kecil agar tidak terpotong */
+@media (max-width: 575.98px) {
+    .input-group {
+        flex-direction: column; /* Select dan Button menjadi tumpukan di layar sangat kecil */
+    }
+    .input-group .nice-select.form-control {
+        border-radius: 5px !important;
+        margin-bottom: 10px;
+    }
+    .input-group-append {
+        width: 100%;
+    }
+    .input-group-append .filter-btn-custom {
+        width: 100%;
+        border-radius: 5px !important;
+    }
+}
+
+
+/* 2. Style Kartu Jadwal */
+.showtime-card {
+    /* ... kode yang sudah ada ... */
+    /* Pastikan gambar poster responsif */
+    max-width: 100%;
+    height: auto;
+}
+/* Memperbaiki alignment text-black di kolom Jadwal Tayang */
+.col-lg-12.text-black p {
+    color: #fff; /* Mengganti warna teks detail di kartu jadwal menjadi putih */
+}
+.col-lg-12.text-black strong {
+    color: #aaa; /* Memberi warna berbeda pada label strong */
+}
+
+
+/* 4. Style Kursi Bioskop (Membuat tabel kursi lebih *scrollable* di layar kecil) */
+@media (max-width: 767.98px) {
+    .seat-selection-section {
+        overflow-x: auto; /* Memungkinkan scroll horizontal jika tabel kursi terlalu lebar */
+        padding: 15px;
+    }
+    .seat-table {
+        min-width: 400px; /* Minimal lebar tabel untuk mencegah terlalu sempit */
+    }
+    .seat {
+        width: 30px; /* Perkecil ukuran kursi */
+        height: 30px;
+        font-size: 12px;
+    }
+    .seat-table th {
+        padding: 2px;
+    }
+}
+
+
+/* -- Hapus atau pertahankan CSS Anda yang lain di bawah ini, sudah cukup baik -- */
+
 .showtime-card {
     background: #0d0d0d;
     border-radius: 8px;
@@ -227,22 +327,11 @@
     color: #888;
 }
 
-.nice-select.form-control {
-    width: 100%;
-    background-color: #1a1a1a;
-    color: #fff;
-    border: none;
-    border-radius: 5px 0 0 5px;
-    height: 50px;
-    line-height: 50px;
+.nice-select .list li {
+    color: #000;
 }
 
-/* KODE TAMBAHAN UNTUK MEMPERBAIKI WARNA TEKS TANGGAL */
-.nice-select .list li {
-    color: #000; /* Menetapkan warna teks hitam untuk semua item di dropdown */
-}
-<style>
-/* Bagian ini untuk legend dan screen, sudah benar */
+/* Bagian untuk kursi bioskop */
 .seat-selection-section {
     background-color: #0d0d0d;
     padding: 30px;
@@ -256,8 +345,6 @@
 .seat-table th, .seat-table td { padding: 4px; text-align: center; }
 .seat-table th { color: #aaa; font-size: 12px; font-weight: bold; }
 .seat-wrapper { position: relative; }
-
-/* CSS UTAMA UNTUK WARNA KURSI */
 .seat {
     width: 40px;
     height: 40px;
@@ -268,28 +355,19 @@
     cursor: pointer;
     transition: background-color 0.2s ease;
     font-size: 14px;
-    /* Tambahkan warna default untuk nomor kursi agar terlihat */
     color: white; 
 }
-.seat.available, .seat-legend .available {
-    background-color: #28a745; /* Hijau untuk tersedia */
-}
-.seat.booked, .seat-legend .booked {
-    background-color: #dc3545; /* Merah untuk dipesan */
-    cursor: not-allowed;
-}
-.seat.selected, .seat-legend .selected {
-    background-color: #007bff; /* Biru untuk dipilih */
-}
+.seat.available, .seat-legend .available { background-color: #28a745; }
+.seat.booked, .seat-legend .booked { background-color: #dc3545; cursor: not-allowed; }
+.seat.selected, .seat-legend .selected { background-color: #007bff; }
 </style>
-</style>
-
 @endsection
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Inisialisasi GLightbox
         const glightbox = GLightbox({
             selector: '.glightbox',
             touchNavigation: true,
@@ -298,6 +376,10 @@
             videosWidth: '900px',
             videosHeight: '500px'
         });
+        
+        // Inisialisasi Nice-Select (Jika Anda menggunakan plugin nice-select)
+        // Jika nice-select tidak otomatis terinisialisasi, tambahkan ini:
+        // $('.nice-select').niceSelect(); 
     });
 </script>
 @endpush

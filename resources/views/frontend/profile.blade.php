@@ -3,22 +3,18 @@
 @section('content')
 
 <section id="hero" class="hero section dark-background">
-    {{-- Gambar latar belakang statis. Ganti 'hero-bg.jpg' dengan nama file gambar Anda --}}
     <img src="{{ asset('img/back.png') }}" alt="Background" data-aos="fade-in">
-    
-    {{-- Overlay Gradasi Transparan --}}
     <div class="hero-gradient-overlay"></div>
 
     <div class="container d-flex flex-column align-items-center">
         <h2 data-aos="fade-up" data-aos-delay="100">SELAMAT DATANG DI CHINEPHILE!</h2>
         <p data-aos="fade-up" data-aos-delay="200">Lebih dari sekadar menonton, ini adalah pengalaman sinematik.</p>
-        <div class="d-flex mt-4" data-aos="fade-up" data-aos-delay="300">
+        <div class="d-flex flex-wrap justify-content-center gap-3 mt-4" data-aos="fade-up" data-aos-delay="300">
             <a href="{{ route('home') }}" class="btn-get-started">LIHAT FILM</a>
-            {{-- Ganti URL YouTube dengan trailer film yang ingin ditampilkan --}}
-            
         </div>
     </div>
 </section>
+
 <section class="anime-details spad" style="padding-top: 50px;">
     <div class="container">
         <div class="row">
@@ -26,8 +22,8 @@
                 <div class="section-title text-center mb-4">
                     <h4>Kenapa Memilih Cinephile?</h4>
                 </div>
-                <div class="showtime-card p-5 text-center">
-                    <div class="row mt-5">
+                <div class="showtime-card p-4 p-md-5 text-center">
+                    <div class="row mt-4">
                         <div class="col-lg-4 col-md-6 mb-4">
                             <div class="inner-card p-4 rounded h-100">
                                 <h5 class="text-danger mb-2">Kualitas Terbaik</h5>
@@ -87,25 +83,25 @@
     z-index: 2;
 }
 
-/* Gaya untuk gradasi transparan */
 .hero-gradient-overlay {
     content: '';
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 300px; /* Atur ketinggian gradasi sesuai kebutuhan */
+    height: 300px;
     background: linear-gradient(to top, rgba(13, 13, 13, 1), rgba(13, 13, 13, 0));
-    z-index: 3; /* Pastikan di atas gambar latar belakang */
+    z-index: 3;
 }
 
 .hero.section .container {
     position: relative;
-    z-index: 4; /* Pastikan konten teks dan tombol di atas overlay */
+    z-index: 4;
+    padding: 0 15px;
 }
 
 .hero.section h2 {
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: 700;
     color: #fff;
     margin-bottom: 20px;
@@ -113,9 +109,10 @@
 }
 
 .hero.section p {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     color: #fff;
     max-width: 600px;
+    margin: 0 auto;
 }
 
 .btn-get-started {
@@ -133,27 +130,6 @@
     background: #ff5252;
 }
 
-.btn-watch-video {
-    text-decoration: none;
-    color: #fff;
-    margin-left: 15px;
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.btn-watch-video i {
-    font-size: 2rem;
-    line-height: 0;
-    margin-right: 8px;
-    color: #e53637;
-    transition: 0.3s;
-}
-
-.btn-watch-video:hover i {
-    color: #ff5252;
-}
-
-/* Styling untuk konten di bawah hero section */
 .showtime-card {
     background: #0d0d0d;
     border-radius: 8px;
@@ -172,42 +148,44 @@
     border: 1px solid #333;
 }
 
+/* 🔹 Responsive */
+@media (max-width: 991px) {
+    .hero.section h2 {
+        font-size: 2rem;
+    }
+    .hero.section p {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 767px) {
+    .hero.section {
+        min-height: 80vh;
+        padding: 50px 0;
+    }
+    .hero.section h2 {
+        font-size: 1.6rem;
+    }
+    .hero.section p {
+        font-size: 0.95rem;
+    }
+    .btn-get-started {
+        padding: 8px 18px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 575px) {
+    .hero.section h2 {
+        font-size: 1.4rem;
+    }
+    .hero.section p {
+        font-size: 0.85rem;
+    }
+    .btn-get-started {
+        width: 100%;
+        text-align: center;
+    }
+}
 </style>
 @endsection
-
-{{-- Pustaka eksternal yang dibutuhkan oleh Hero Section --}}
-@push('head_scripts')
-    {{-- Aos CSS --}}
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    {{-- Glightbox CSS --}}
-    <link href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css" rel="stylesheet">
-    {{-- Bootstrap Icons CSS --}}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-@endpush
-
-@push('scripts')
-    {{-- Aos JS --}}
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    {{-- Glightbox JS --}}
-    <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
-
-    <script>
-        // Inisialisasi AOS
-        AOS.init({
-            duration: 800,
-            easing: 'ease-in-out',
-            once: true,
-            mirror: false
-        });
-
-        // Inisialisasi Glightbox
-        const glightbox = GLightbox({
-            selector: '.glightbox',
-            touchNavigation: true,
-            loop: true,
-            autoplayVideos: true,
-            videosWidth: '900px',
-            videosHeight: '500px'
-        });
-    </script>
-@endpush

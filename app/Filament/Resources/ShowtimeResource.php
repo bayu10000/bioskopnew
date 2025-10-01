@@ -17,7 +17,8 @@ use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Get;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\ShowtimeResource\Pages;
-use Illuminate\Validation\Rules\Unique; // ✅ Import Unique Rule
+use Illuminate\Validation\Rules\Unique;
+use Carbon\Carbon;
 
 class ShowtimeResource extends Resource
 {
@@ -35,6 +36,7 @@ class ShowtimeResource extends Resource
                     ->required()
                     ->live()
                     ->preload()
+                    ->afterStateUpdated(fn(Forms\Set $set) => $set('tanggal', null))
                     ->unique(ignoreRecord: true, modifyRuleUsing: function (Unique $rule, Get $get) {
                         return $rule->where('ruangan_id', $get('ruangan_id'))
                             ->where('tanggal', $get('tanggal'))
@@ -45,41 +47,51 @@ class ShowtimeResource extends Resource
                     ->label('Ruangan')
                     ->relationship('ruangan', 'nama')
                     ->required()
-                    ->unique(ignoreRecord: true, modifyRuleUsing: function (Unique $rule, Get $get) {
-                        return $rule->where('film_id', $get('film_id'))
-                            ->where('tanggal', $get('tanggal'))
-                            ->where('jam', $get('jam'));
-                    }),
+                    ->preload()
+                    ->live(),
 
                 DatePicker::make('tanggal')
-                    ->label('Tanggal')
+                    ->label('Tanggal Tayang')
                     ->required()
-                    ->unique(ignoreRecord: true, modifyRuleUsing: function (Unique $rule, Get $get) {
-                        return $rule->where('film_id', $get('film_id'))
-                            ->where('ruangan_id', $get('ruangan_id'))
-                            ->where('jam', $get('jam'));
-                    })
+                    ->live()
                     ->minDate(function (Get $get) {
-                        $film = Film::find($get('film_id'));
-                        return $film ? $film->tanggal_mulai : now();
+                        $filmId = $get('film_id');
+                        if ($filmId) {
+                            $film = Film::find($filmId);
+                            return $film ? Carbon::parse($film->tanggal_mulai) : null;
+                        }
+                        return null;
                     })
                     ->maxDate(function (Get $get) {
-                        $film = Film::find($get('film_id'));
-                        return $film ? $film->tanggal_selesai : null;
+                        $filmId = $get('film_id');
+                        if ($filmId) {
+                            $film = Film::find($filmId);
+                            return $film ? Carbon::parse($film->tanggal_selesai) : null;
+                        }
+                        return null;
                     }),
 
-                TimePicker::make('jam')
+                Select::make('jam')
                     ->label('Jam Tayang')
                     ->required()
+                    ->options([
+                        '10:00' => '10:00',
+
+                        '16:00' => '16:00',
+                        '19:00' => '19:00',
+                        '22:00' => '22:00',
+                    ])
                     ->unique(ignoreRecord: true, modifyRuleUsing: function (Unique $rule, Get $get) {
-                        return $rule->where('film_id', $get('film_id'))
-                            ->where('ruangan_id', $get('ruangan_id'))
+                        return $rule->where('ruangan_id', $get('ruangan_id'))
+                            ->where('film_id', $get('film_id'))
                             ->where('tanggal', $get('tanggal'));
                     }),
+
 
                 TextInput::make('harga')
                     ->label('Harga Tiket')
                     ->required()
+                    ->prefix('Rp')
                     ->numeric(),
             ]);
     }

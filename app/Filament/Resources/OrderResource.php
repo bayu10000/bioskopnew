@@ -41,6 +41,11 @@ class OrderResource extends Resource
                 Tables\Columns\TextColumn::make('showtime.film.judul')
                     ->label('Film')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('showtime.ruangan.nama')
+                    ->label('Ruangan')
+                    ->sortable()
+                    ->searchable(),
+
                 Tables\Columns\TextColumn::make('jumlah_tiket')
                     ->label('Jumlah Tiket')
                     ->sortable(),

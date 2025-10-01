@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('ruangans', function (Blueprint $table) {
             $table->id();
-            $table->string('nama');
-            $table->integer('kapasitas');
+            $table->string('nama'); // contoh: Ruangan 1, Studio 2, dll
+            $table->integer('kapasitas')->default(100); // default 100 kursi
             $table->timestamps();
         });
     }
