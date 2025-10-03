@@ -194,7 +194,7 @@
     {{-- CSS Tambahan --}}
     <style>
     .footer {
-        background: #000; /* jaga full black */
+         /* jaga full black */
         color: #fff;
     }
     

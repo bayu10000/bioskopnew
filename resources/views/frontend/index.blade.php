@@ -79,11 +79,9 @@
                                     </a>
                                     <div class="product__item__text">
                                         <ul>
-                                            @foreach ($film->genres as $genre)
-                                                @if ($loop->index < 2) 
-                                                    <li><span class="genre-badge">{{ $genre->nama }}</span></li>
-                                                @endif
-                                            @endforeach
+                                            @foreach($film->genres as $genre) 
+                                            <span class="genre-badge">{{ $genre->nama }}</span>
+                                        @endforeach
                                         </ul>
                                         <h5><a href="{{ route('film.show', $film->id) }}">{{ $film->judul }}</a></h5>
                                     </div>

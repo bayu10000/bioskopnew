@@ -2,19 +2,25 @@
 
 @section('content')
 
+{{-- 1. HERO SECTION DENGAN ID UNTUK JS --}}
 <section id="hero" class="hero section dark-background">
-    <img src="{{ asset('img/back.png') }}" alt="Background" data-aos="fade-in">
+    {{-- Gambar dipindahkan dan akan diisi oleh JavaScript --}}
+    <div id="hero-background-image" style="background-image: url('{{ asset('img/back.png') }}');" class="hero-image-transition"></div>
     <div class="hero-gradient-overlay"></div>
 
     <div class="container d-flex flex-column align-items-center">
-        <h2 data-aos="fade-up" data-aos-delay="100">SELAMAT DATANG DI CHINEPHILE!</h2>
+        <h2 data-aos="fade-up" data-aos-delay="100">SELAMAT DATANG DI CINEPHILE!</h2>
         <p data-aos="fade-up" data-aos-delay="200">Lebih dari sekadar menonton, ini adalah pengalaman sinematik.</p>
         <div class="d-flex flex-wrap justify-content-center gap-3 mt-4" data-aos="fade-up" data-aos-delay="300">
             <a href="{{ route('home') }}" class="btn-get-started">LIHAT FILM</a>
         </div>
     </div>
 </section>
+{{-- END HERO SECTION --}}
 
+---
+
+{{-- 2. KENAPA MEMILIH CINEPHILE --}}
 <section class="anime-details spad" style="padding-top: 50px;">
     <div class="container">
         <div class="row">
@@ -49,7 +55,36 @@
     </div>
 </section>
 
-{{-- Styling Tambahan --}}
+---
+
+{{-- 3. SCRIPT UNTUK ROTASI BACKGROUND --}}
+<script>
+    // **Ganti dengan path foto-foto Anda di folder 'public/img/'**
+    const backgrounds = [
+        '{{ asset('img/hero-1.jpg') }}', // Contoh: Ganti dengan foto film 1
+        '{{ asset('img/hero-5.jpg') }}', // Contoh: Ganti dengan foto film 2
+        '{{ asset('img/hero-3.jpg') }}', // Contoh: Ganti dengan foto teater
+        '{{ asset('img/hero-4.jpg') }}'  // Contoh: Ganti dengan foto kursi/interior
+    ];
+
+    let currentIndex = 0;
+    const heroImageElement = document.getElementById('hero-background-image');
+
+    function changeBackground() {
+        currentIndex = (currentIndex + 1) % backgrounds.length;
+        const nextImageUrl = backgrounds[currentIndex];
+        
+        // Atur background baru dan biarkan CSS menangani transisi
+        heroImageElement.style.backgroundImage = `url('${nextImageUrl}')`;
+    }
+
+    // Jalankan perubahan background setiap 5 detik (5000ms)
+    setInterval(changeBackground, 5000);
+</script>
+
+---
+
+{{-- 4. STYLING TAMBAHAN & PERBAIKAN --}}
 <style>
 .hero.section {
     position: relative;
@@ -62,15 +97,26 @@
     overflow: hidden;
 }
 
-.hero.section img {
+/* 🚨 PERUBAHAN PENTING UNTUK TRANSISI GAMBAR */
+#hero-background-image {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    /* Gunakan background-size dan background-position agar terlihat seperti object-fit: cover */
+    background-size: cover; 
+    background-position: center;
     z-index: 1;
+    /* 🚨 Tambahkan transisi untuk gambar latar belakang */
+    transition: background-image 1.5s ease-in-out; 
 }
+/* Hapus atau nonaktifkan style untuk .hero.section img yang lama */
+.hero.section img {
+    display: none; 
+}
+/* 🚨 END PERUBAHAN PENTING */
+
 
 .hero.section::before {
     content: "";
@@ -107,6 +153,7 @@
     margin-bottom: 20px;
     text-transform: uppercase;
 }
+/* ... (Styling p, btn-get-started, dan showtime-card lainnya dipertahankan) ... */
 
 .hero.section p {
     font-size: 1.1rem;

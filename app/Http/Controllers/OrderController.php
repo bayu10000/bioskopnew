@@ -42,30 +42,46 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         // 1. Validasi permintaan
+        // 🚨 PERBAIKAN: Validasi sekarang memeriksa keberadaan kode kursi di kolom 'nomor_kursi'
         $request->validate([
             'showtime_id' => 'required|exists:showtimes,id',
             'selected_seats' => 'required|array|min:1',
-            'selected_seats.*' => 'required|exists:seats,id',
+            // Memastikan kode kursi yang dikirim ada di tabel seats pada kolom 'nomor_kursi'
+            'selected_seats.*' => 'required|string|max:10|exists:seats,nomor_kursi',
         ]);
 
         $showtimeId = $request->input('showtime_id');
-        $selectedSeatIds = $request->input('selected_seats');
+        // 🚨 $selectedSeatCodes sekarang berisi KODE KURSI (misalnya ['A1', 'B2'])
+        $selectedSeatCodes = $request->input('selected_seats');
 
         // Gunakan transaksi untuk memastikan semua operasi berhasil atau tidak sama sekali
         DB::beginTransaction();
 
         try {
-            // Ambil data showtime dan kursi di dalam transaksi
+            // Ambil data showtime
             $showtime = Showtime::find($showtimeId);
-            $seats = Seat::whereIn('id', $selectedSeatIds)->get();
 
-            // Verifikasi kursi masih tersedia dan milik showtime yang sama
-            foreach ($seats as $seat) {
-                if ($seat->showtime_id != $showtimeId || $seat->status !== 'available') {
-                    DB::rollBack();
-                    return redirect()->back()->with('error', 'Salah satu kursi yang Anda pilih sudah tidak tersedia.');
-                }
+            // 🚨 PERBAIKAN: Ambil kursi berdasarkan NOMOR KURSI (kode)
+            $seats = Seat::whereIn('nomor_kursi', $selectedSeatCodes)
+                ->where('showtime_id', $showtimeId) // Pastikan hanya kursi showtime ini
+                ->get();
+
+            // Verifikasi jumlah kursi yang ditemukan sama dengan yang dipilih
+            if ($seats->count() !== count($selectedSeatCodes)) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'Ada kesalahan dalam pemilihan kursi atau kursi tidak valid.');
             }
+
+            // Verifikasi kursi masih tersedia
+            $unavailableSeat = $seats->first(fn($seat) => $seat->status !== 'available');
+
+            if ($unavailableSeat) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'Salah satu kursi yang Anda pilih sudah tidak tersedia.');
+            }
+
+            // Ambil ID kursi
+            $selectedSeatIds = $seats->pluck('id')->toArray();
 
             // Hitung total harga
             $totalPrice = $showtime->harga * count($selectedSeatIds);
@@ -86,6 +102,7 @@ class OrderController extends Controller
             }
 
             // Perbarui status kursi menjadi 'booked'
+            // Gunakan update pada koleksi yang sudah diambil agar tidak ada race condition pada kolom showtime_id
             Seat::whereIn('id', $selectedSeatIds)
                 ->update(['status' => 'booked']);
 
@@ -98,9 +115,10 @@ class OrderController extends Controller
 
             return redirect()->route('my-orders')->with('success', 'Pemesanan berhasil!');
         } catch (\Exception $e) {
-            // Jika ada kesalahan, batalkan semua operasi
+            // Log the exception for debugging purposes (optional but recommended)
+            // \Log::error('Order processing failed: ' . $e->getMessage()); 
             DB::rollBack();
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memproses pesanan. Silakan coba lagi.');
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memproses pesanan. Silakan coba lagi. Error: ' . $e->getMessage());
         }
     }
 

@@ -160,12 +160,12 @@ document.addEventListener('DOMContentLoaded', function () {
         // Update Hidden Inputs untuk form submission
         selectedSeatsWrapper.innerHTML = '';
         selectedSeats.forEach(seatCode => { // Menggunakan seatCode
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'selected_seats[]';
-            input.value = seatCode; // Kirim kode kursi (A1, B2, dst.)
-            selectedSeatsWrapper.appendChild(input);
-        });
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_seats[]';
+        input.value = seatCode; // Kirim kode kursi (A1, B2, dst.)
+        selectedSeatsWrapper.appendChild(input);
+    });
 
         submitBtn.disabled = totalTickets === 0;
     }

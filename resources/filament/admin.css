@@ -1,0 +1,19 @@
+/* Ubah style brand name di sidebar/topbar admin */
+.fi-sidebar .fi-brand {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.fi-sidebar .fi-brand::before {
+    content: "CINE";
+    color: #e53637; /* merah */
+}
+
+.fi-sidebar .fi-brand::after {
+    content: "PHILE";
+    color: #ffffff; /* putih */
+}
+
+.fi-sidebar .fi-brand > span {
+    display: none; /* sembunyikan text bawaan */
+}
