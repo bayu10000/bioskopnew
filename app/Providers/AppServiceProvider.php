@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Carbon;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,6 +15,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot()
     {
+
+        Carbon::setLocale('id');
         // Gate::before agar super-admin selalu dapat akses
         Gate::before(function ($user, $ability) {
             // Pastikan $user bukan null dan adalah instance model User

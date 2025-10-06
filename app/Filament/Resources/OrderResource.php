@@ -12,6 +12,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
+// 💡 BARU: Import OrderController untuk memanggil fungsi pembatalan
+use App\Http\Controllers\OrderController;
 
 class OrderResource extends Resource
 {
@@ -53,6 +55,16 @@ class OrderResource extends Resource
                     ->label('Nomor Kursi')
                     ->badge()
                     ->sortable(),
+
+                // 💡 BARU: Tambahkan Kolom qr_code_hash untuk referensi cepat/pencarian
+                Tables\Columns\TextColumn::make('qr_code_hash')
+                    ->label('QR Hash')
+                    ->searchable()
+                    ->limit(10) // Tampilkan hanya 10 karakter pertama
+                    ->copyable()
+                    ->copyMessage('QR Hash disalin!')
+                    ->toggleable(isToggledHiddenByDefault: true), // Sembunyikan secara default
+
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->colors([
@@ -71,7 +83,10 @@ class OrderResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn(Order $record): bool => $record->status !== 'paid')
+                    ->modalDescription('Menghapus pesanan ini (kecuali paid) tidak membebaskan kursi secara otomatis. Gunakan "Batalkan Pesanan" untuk membebaskan kursi.'),
+
 
                 Tables\Actions\Action::make('markAsPaid')
                     ->label('Mark as Paid')
@@ -85,15 +100,57 @@ class OrderResource extends Resource
                             ->title('Order Confirmed!')
                             ->success()
                             ->send();
-                    })
+                    }),
+
+                // 💡 BARU: Action Pembatalan untuk Admin (Menggunakan helper dari Controller)
+                Tables\Actions\Action::make('cancelOrder')
+                    ->label('Batalkan Pesanan')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Batalkan Pesanan?')
+                    ->modalDescription('Apakah Anda yakin ingin membatalkan pesanan ini? Kursi akan **dibebaskan (available)** dan detail kursi **tetap tersimpan** sebagai riwayat.')
+                    ->visible(fn(Order $record): bool => in_array($record->status, ['pending', 'paid']))
+                    ->action(function (Order $record) {
+                        // Panggil fungsi helper statis
+                        if (OrderController::releaseSeats($record)) {
+                            Notification::make()
+                                ->title('Pesanan Dibatalkan')
+                                ->body('Kursi telah dibebaskan dan status pesanan #' . $record->id . ' diubah menjadi DIBATALKAN.')
+                                ->success()
+                                ->send();
+                        } else {
+                            Notification::make()
+                                ->title('Gagal Membatalkan')
+                                ->body('Terjadi kesalahan saat memproses pembatalan dan membebaskan kursi.')
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
+                // 💡 Action untuk menampilkan QR Code
+                Tables\Actions\Action::make('viewQrCode')
+                    ->label('Lihat QR')
+                    ->icon('heroicon-o-qr-code')
+                    ->color('primary')
+                    ->modalContent(fn(Order $record): \Illuminate\View\View => view(
+                        'filament.admin.actions.order-qr-code-modal',
+                        ['qrHash' => $record->qr_code_hash]
+                    ))
+                    ->modalHeading('QR Code Tiket')
+                    ->modalSubmitAction(false) // Hilangkan tombol Submit
+                    ->modalCancelActionLabel('Tutup')
+                    ->visible(fn(Order $record): bool => $record->status === 'paid' && !empty($record->qr_code_hash)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    // Sebaiknya tidak menggunakan DeleteBulkAction untuk pesanan PAID
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
 
+    // ... (metode getEloquentQuery dan getPages tetap sama) ...
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();

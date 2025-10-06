@@ -16,6 +16,7 @@ class Order extends Model
         'total_harga',
         'status',
         'created_at',
+        'qr_code_hash',
     ];
 
     public function user()

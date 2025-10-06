@@ -22,6 +22,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/', [FrontendController::class, 'profile'])->name('profile');
 Route::get('/index', [FrontendController::class, 'index'])->name('home');
 Route::get('/film/{id}', [FrontendController::class, 'showFilm'])->name('film.show');
+Route::get('/ticket/{hash}', [OrderController::class, 'viewTicket'])
+    ->name('ticket.view');
 
 
 // ======================
@@ -36,4 +38,6 @@ Route::middleware('auth')->group(function () {
 
     // halaman pesanan saya
     Route::get('/my-orders', [OrderController::class, 'myOrders'])->name('my-orders');
+    // Rute Untuk cancel Pesanan
+    Route::post('/order/{orderId}/cancel', [OrderController::class, 'cancelOrder'])->name('order.cancel');
 });
