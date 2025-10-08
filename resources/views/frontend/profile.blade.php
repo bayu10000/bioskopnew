@@ -2,19 +2,26 @@
 
 @section('content')
 
-{{-- 1. HERO SECTION DENGAN ID UNTUK JS --}}
+{{-- 1. HERO SECTION --}}
 <section id="hero" class="hero section dark-background">
-    {{-- Gambar dipindahkan dan akan diisi oleh JavaScript --}}
-    <div id="hero-background-image" style="background-image: url('{{ asset('img/back.png') }}');" class="hero-image-transition"></div>
+    {{-- Wrapper background slideshow --}}
+    <div id="hero-slideshow">
+        <div class="hero-slide active" style="background-image: url('{{ asset('img/cun.jpg') }}');"></div>
+        <div class="hero-slide" style="background-image: url('{{ asset('img/film.jpg') }}');"></div>
+        <div class="hero-slide" style="background-image: url('{{ asset('img/sup.jpg') }}');"></div>
+        <div class="hero-slide" style="background-image: url('{{ asset('img/god.jpg') }}');"></div>
+    </div>
+
+    {{-- Overlay --}}
     <div class="hero-gradient-overlay"></div>
 
-    <div class="container d-flex flex-column align-items-center">
+    {{-- <div class="container d-flex flex-column align-items-center justify-content-center">
         <h2 data-aos="fade-up" data-aos-delay="100">SELAMAT DATANG DI CINEPHILE!</h2>
         <p data-aos="fade-up" data-aos-delay="200">Lebih dari sekadar menonton, ini adalah pengalaman sinematik.</p>
         <div class="d-flex flex-wrap justify-content-center gap-3 mt-4" data-aos="fade-up" data-aos-delay="300">
             <a href="{{ route('home') }}" class="btn-get-started">LIHAT FILM</a>
         </div>
-    </div>
+    </div> --}}
 </section>
 {{-- END HERO SECTION --}}
 
@@ -57,35 +64,27 @@
 
 ---
 
-{{-- 3. SCRIPT UNTUK ROTASI BACKGROUND --}}
+{{-- 3. SCRIPT SLIDESHOW --}}
 <script>
-    // **Ganti dengan path foto-foto Anda di folder 'public/img/'**
-    const backgrounds = [
-        '{{ asset('img/hero-1.jpg') }}', // Contoh: Ganti dengan foto film 1
-        '{{ asset('img/hero-5.jpg') }}', // Contoh: Ganti dengan foto film 2
-        '{{ asset('img/hero-3.jpg') }}', // Contoh: Ganti dengan foto teater
-        '{{ asset('img/hero-4.jpg') }}'  // Contoh: Ganti dengan foto kursi/interior
-    ];
+    document.addEventListener("DOMContentLoaded", () => {
+        const slides = document.querySelectorAll(".hero-slide");
+        let current = 0;
 
-    let currentIndex = 0;
-    const heroImageElement = document.getElementById('hero-background-image');
+        function nextSlide() {
+            slides[current].classList.remove("active");
+            current = (current + 1) % slides.length;
+            slides[current].classList.add("active");
+        }
 
-    function changeBackground() {
-        currentIndex = (currentIndex + 1) % backgrounds.length;
-        const nextImageUrl = backgrounds[currentIndex];
-        
-        // Atur background baru dan biarkan CSS menangani transisi
-        heroImageElement.style.backgroundImage = `url('${nextImageUrl}')`;
-    }
-
-    // Jalankan perubahan background setiap 5 detik (5000ms)
-    setInterval(changeBackground, 5000);
+        setInterval(nextSlide, 5000); // ganti gambar setiap 5 detik
+    });
 </script>
 
 ---
 
-{{-- 4. STYLING TAMBAHAN & PERBAIKAN --}}
+{{-- 4. STYLE --}}
 <style>
+/* ==== HERO SECTION ==== */
 .hero.section {
     position: relative;
     width: 100%;
@@ -95,40 +94,36 @@
     justify-content: center;
     text-align: center;
     overflow: hidden;
+    background: #000;
 }
 
-/* 🚨 PERUBAHAN PENTING UNTUK TRANSISI GAMBAR */
-#hero-background-image {
+/* Background slideshow wrapper */
+#hero-slideshow {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    /* Gunakan background-size dan background-position agar terlihat seperti object-fit: cover */
-    background-size: cover; 
-    background-position: center;
     z-index: 1;
-    /* 🚨 Tambahkan transisi untuk gambar latar belakang */
-    transition: background-image 1.5s ease-in-out; 
+    overflow: hidden;
 }
-/* Hapus atau nonaktifkan style untuk .hero.section img yang lama */
-.hero.section img {
-    display: none; 
-}
-/* 🚨 END PERUBAHAN PENTING */
 
-
-.hero.section::before {
-    content: "";
+/* Tiap gambar slide */
+.hero-slide {
     position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    z-index: 2;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 1.2s ease-in-out;
 }
 
+.hero-slide.active {
+    opacity: 1;
+}
+
+/* Overlay gradasi */
 .hero-gradient-overlay {
     content: '';
     position: absolute;
@@ -137,23 +132,24 @@
     width: 100%;
     height: 300px;
     background: linear-gradient(to top, rgba(13, 13, 13, 1), rgba(13, 13, 13, 0));
-    z-index: 3;
+    z-index: 2;
 }
 
+/* Konten di atas slide */
 .hero.section .container {
     position: relative;
-    z-index: 4;
+    z-index: 3;
     padding: 0 15px;
 }
 
 .hero.section h2 {
-    font-size: 2.5rem;
-    font-weight: 700;
+    font-size: 2.8rem;
+    font-weight: 800;
     color: #fff;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     text-transform: uppercase;
+    letter-spacing: 1px;
 }
-/* ... (Styling p, btn-get-started, dan showtime-card lainnya dipertahankan) ... */
 
 .hero.section p {
     font-size: 1.1rem;
@@ -165,7 +161,7 @@
 .btn-get-started {
     background: #e53637;
     color: #fff;
-    padding: 10px 25px;
+    padding: 12px 28px;
     border-radius: 5px;
     transition: 0.3s;
     text-transform: uppercase;
@@ -177,6 +173,7 @@
     background: #ff5252;
 }
 
+/* ==== CARD SECTION ==== */
 .showtime-card {
     background: #0d0d0d;
     border-radius: 8px;
@@ -190,15 +187,15 @@
     box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
 }
 
-.showtime-card .inner-card {
+.inner-card {
     background: #1a1a1a;
     border: 1px solid #333;
 }
 
-/* 🔹 Responsive */
+/* ==== RESPONSIVE ==== */
 @media (max-width: 991px) {
     .hero.section h2 {
-        font-size: 2rem;
+        font-size: 2.1rem;
     }
     .hero.section p {
         font-size: 1rem;
@@ -208,17 +205,14 @@
 @media (max-width: 767px) {
     .hero.section {
         min-height: 80vh;
-        padding: 50px 0;
+        padding: 60px 0;
     }
     .hero.section h2 {
-        font-size: 1.6rem;
-    }
-    .hero.section p {
-        font-size: 0.95rem;
+        font-size: 1.7rem;
     }
     .btn-get-started {
-        padding: 8px 18px;
-        font-size: 0.9rem;
+        padding: 10px 22px;
+        font-size: 0.95rem;
     }
 }
 
@@ -235,4 +229,5 @@
     }
 }
 </style>
+
 @endsection

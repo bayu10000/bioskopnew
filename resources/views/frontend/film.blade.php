@@ -21,15 +21,23 @@
                 {{-- Kolom Poster (Responsif: 12 di XS, 4 di SM, 3 di LG) --}}
                 <div class="col-lg-3 col-md-4 col-sm-4 col-12 mb-4 mb-lg-0"> {{-- Diubah ke col-md-4 agar lebih proporsional --}}
                     <div class="anime__details__pic set-bg" data-setbg="{{ asset('storage/' . $film->poster) }}" style="background-image: url('{{ asset('storage/' . $film->poster) }}');">
-                        <div class="ep">
-                            @if($film->durasi)
-                                {{ $film->durasi }} min
-                            @else
-                                N/A
-                            @endif
-                        </div>
+                        <div class="ep" style="
+    position: absolute; 
+    top: 10px; 
+    left: 10px; 
+    z-index: 10; 
+    padding: 3px 8px; 
+    background-color: #ff0000; /* Merah */
+    color: #ffffff;            /* Putih */
+    font-size: 14px; 
+    font-weight: bold; 
+    border-radius: 4px;
+">
+    {{ $film->durasi }} min
+</div>
+                        
                         <div class="comment"><i class="fa fa-comments"></i> {{ $film->showtimes->count() }} Jadwal</div>
-                        <div class="view"><i class="fa fa-eye"></i> {{ $film->views ?? 0 }}</div>
+                        <div class="view"><i class="fa fa-eye"></i> {{ $film->tiket_terjual}}</div>
                     </div>
                 </div>
                 {{-- Kolom Detail (Responsif: 12 di XS, 8 di SM, 9 di LG) --}}
@@ -37,7 +45,7 @@
                     <div class="anime__details__text">
                         <div class="anime__details__title">
                             <h3>{{ $film->judul }}</h3>
-                            <span>{{ $film->sutradara }}</span>
+                            {{-- <span>{{ $film->sutradara }}</span> --}}
                         </div>
                         <p>{{ $film->sinopsis }}</p>
                         <div class="anime__details__widget">
@@ -50,6 +58,7 @@
                                             @endforeach
                                         </li>
                                         <li><span>Sutradara:</span> {{ $film->sutradara }}</li>
+                                        <li><span>Durasi:</span> {{ $film->durasi }}</li>
                                         <li><span>Aktor:</span> {{ $film->aktor }}</li>
                                     </ul>
                                 </div>
@@ -123,9 +132,9 @@
                             @foreach ($showtimes as $showtime)
                                 @php
                                     $warnaRuangan = match($showtime->ruangan->nama) {
-                                        'Ruangan 1' => 'text-primary', // biru
-                                        'Ruangan 2' => 'text-warning', // kuning
-                                        'Ruangan 3' => 'text-success', // hijau
+                                        'Studio 1' => 'text-primary', // biru
+                                        'Studio 2' => 'text-warning', // kuning
+                                        'Studio 3' => 'text-success', // hijau
                                         default => 'text-light',
                                     };
                                 @endphp
@@ -136,7 +145,7 @@
                                             <h6>{{ \Carbon\Carbon::parse($showtime->jam)->format('H:i') }} WIB</h6>
                                         </div>
                                         <div class="showtime-details">
-                                            <p><strong>Studio:</strong> <span class="{{ $warnaRuangan }}">{{ $showtime->ruangan->nama }}</span></p>
+                                            <strong><span class="{{ $warnaRuangan }}">{{ $showtime->ruangan->nama }}</span></strong>
                                             <p><strong>Harga:</strong> Rp {{ number_format($showtime->harga, 0, ',', '.') }}</p>
                                         </div>
                                         <div class="showtime-action mt-auto">
@@ -326,6 +335,11 @@
     margin-right: 8px;
     color: #888;
 }
+
+
+
+
+
 
 .nice-select .list li {
     color: #000;

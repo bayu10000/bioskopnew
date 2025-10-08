@@ -72,8 +72,9 @@
                                             <div class="comment"><i class="fa fa-comments"></i>
                                                 {{ $film->showtimes->count() }} Jadwal
                                             </div>
-                                            <div class="view"><i class="fa fa-eye"></i>
-                                                {{ $film->views ?? 0 }}
+                                            <div class="view">
+                                                <i class="fa fa-eye"></i>
+                                                {{ $film->tiket_terjual }}
                                             </div>
                                         </div>
                                     </a>

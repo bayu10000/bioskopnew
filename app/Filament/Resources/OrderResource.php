@@ -4,15 +4,14 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\OrderResource\Pages;
 use App\Models\Order;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
-// 💡 BARU: Import OrderController untuk memanggil fungsi pembatalan
 use App\Http\Controllers\OrderController;
 
 class OrderResource extends Resource
@@ -56,14 +55,13 @@ class OrderResource extends Resource
                     ->badge()
                     ->sortable(),
 
-                // 💡 BARU: Tambahkan Kolom qr_code_hash untuk referensi cepat/pencarian
                 Tables\Columns\TextColumn::make('qr_code_hash')
                     ->label('QR Hash')
                     ->searchable()
-                    ->limit(10) // Tampilkan hanya 10 karakter pertama
+                    ->limit(10)
                     ->copyable()
                     ->copyMessage('QR Hash disalin!')
-                    ->toggleable(isToggledHiddenByDefault: true), // Sembunyikan secara default
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
@@ -75,7 +73,7 @@ class OrderResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Waktu Pembelian')
-                    ->dateTime('d-m-Y H:i') // contoh: 22-09-2025 14:35
+                    ->dateTime('d-m-Y H:i')
                     ->sortable(),
             ])
             ->filters([
@@ -89,8 +87,8 @@ class OrderResource extends Resource
 
 
                 Tables\Actions\Action::make('markAsPaid')
-                    ->label('Mark as Paid')
-                    ->icon('heroicon-o-check-badge')
+                    ->label('Confirm as Paid')
+                    ->icon('heroicon-o-currency-dollar')
                     ->color('success')
                     ->visible(fn(Order $record): bool => $record->status === 'pending')
                     ->action(function (Order $record) {
@@ -102,7 +100,6 @@ class OrderResource extends Resource
                             ->send();
                     }),
 
-                // 💡 BARU: Action Pembatalan untuk Admin (Menggunakan helper dari Controller)
                 Tables\Actions\Action::make('cancelOrder')
                     ->label('Batalkan Pesanan')
                     ->icon('heroicon-o-x-circle')
@@ -128,7 +125,6 @@ class OrderResource extends Resource
                         }
                     }),
 
-                // 💡 Action untuk menampilkan QR Code
                 Tables\Actions\Action::make('viewQrCode')
                     ->label('Lihat QR')
                     ->icon('heroicon-o-qr-code')
@@ -138,19 +134,50 @@ class OrderResource extends Resource
                         ['qrHash' => $record->qr_code_hash]
                     ))
                     ->modalHeading('QR Code Tiket')
-                    ->modalSubmitAction(false) // Hilangkan tombol Submit
+                    ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
                     ->visible(fn(Order $record): bool => $record->status === 'paid' && !empty($record->qr_code_hash)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    // Sebaiknya tidak menggunakan DeleteBulkAction untuk pesanan PAID
+                    // 💡 BARU: Bulk Action untuk Mark as Paid
+                    Tables\Actions\BulkAction::make('markSelectedAsPaid')
+                        ->label('Konfirmasi Pembayaran (Massal)')
+                        ->icon('heroicon-o-currency-dollar')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading('Konfirmasi Pembayaran Semua Pesanan yang Dipilih?')
+                        ->modalDescription('Tindakan ini akan mengubah status semua pesanan yang dipilih menjadi **PAID**. Tindakan tidak dapat diurungkan.')
+                        ->action(function (Collection $records) {
+                            // Hitung jumlah pesanan yang statusnya 'pending'
+                            $pendingCount = $records->where('status', 'pending')->count();
+
+                            // Ubah status hanya untuk yang masih 'pending'
+                            $records->where('status', 'pending')->each(function (Order $record) {
+                                $record->status = 'paid';
+                                $record->save();
+                            });
+
+                            if ($pendingCount > 0) {
+                                Notification::make()
+                                    ->title('Konfirmasi Massal Berhasil!')
+                                    ->body("{$pendingCount} pesanan berhasil diubah statusnya menjadi PAID.")
+                                    ->success()
+                                    ->send();
+                            } else {
+                                Notification::make()
+                                    ->title('Tidak Ada Perubahan')
+                                    ->body('Semua pesanan yang dipilih sudah PAID atau CANCELLED.')
+                                    ->warning()
+                                    ->send();
+                            }
+                        }),
+
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
 
-    // ... (metode getEloquentQuery dan getPages tetap sama) ...
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
