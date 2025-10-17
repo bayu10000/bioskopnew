@@ -16,7 +16,16 @@ class FrontendController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Film::with(['genres', 'showtimes']); // eager load biar tidak N+1
+        // Ambil waktu saat ini
+        $currentDateTime = Carbon::now();
+
+        // 💡 PERBAIKAN 1: Eager load showtimes DENGAN FILTER waktu.
+        // Ini memastikan `$film->showtimes` hanya berisi jadwal yang belum terlewat,
+        // sehingga hitungan di index.blade.php menjadi akurat.
+        $query = Film::with(['genres', 'showtimes' => function ($q) use ($currentDateTime) {
+            // Filter: Hanya ambil yang waktu tayangnya di masa depan (lebih dari sekarang)
+            $q->whereRaw("CONCAT(tanggal, ' ', jam) > ?", [$currentDateTime->format('Y-m-d H:i:s')]);
+        }]);
 
         // Filter berdasarkan genre (jika dipilih)
         if ($request->filled('genre')) {
@@ -35,6 +44,14 @@ class FrontendController extends Controller
             });
         }
 
+        // 💡 PERBAIKAN 2: Filter Film secara keseluruhan.
+        // HANYA tampilkan film yang MASIH MEMILIKI JADWAL TAYANG DI MASA DEPAN.
+        // Ini yang menyebabkan film akan hilang dari halaman utama jika semua jadwalnya terlewat.
+        $query->whereHas('showtimes', function ($q) use ($currentDateTime) {
+            $q->whereRaw("CONCAT(tanggal, ' ', jam) > ?", [$currentDateTime->format('Y-m-d H:i:s')]);
+        });
+
+
         // Ambil semua genre untuk filter di view
         $genres = Genre::all();
 
@@ -46,31 +63,49 @@ class FrontendController extends Controller
         return view('frontend.index', compact('films', 'genres'));
     }
 
+    // ----------------------------------------------------
+    // FUNGSI showFilm: Menampilkan detail film dan jadwal
+    // ----------------------------------------------------
+
     /**
      * Tampilkan detail film dengan jadwal tayang.
      */
     public function showFilm($id, Request $request)
     {
         $film = Film::with('genres')->findOrFail($id);
+        $currentDateTime = Carbon::now(); // Ambil waktu saat ini
 
+        // 1. Ambil tanggal tayang yang unik dan BELUM terlewat
         $showtimeDates = $film->showtimes()
+            // Filter: Hanya ambil yang waktu tayangnya di masa depan (lebih dari sekarang)
+            // Menggunakan '>' alih-alih '>=' untuk menghilangkan jadwal yang sudah dimulai/lewat.
+            ->whereRaw("CONCAT(tanggal, ' ', jam) > ?", [$currentDateTime->format('Y-m-d H:i:s')])
             ->distinct()
             ->pluck('tanggal')
             ->sortBy(fn($date) => Carbon::parse($date));
 
+        // 2. Tentukan tanggal yang dipilih (jika ada, gunakan yang paling awal)
         $selectedDate = $request->input('date', $showtimeDates->first());
 
         $showtimes = collect();
         if ($selectedDate) {
-            $showtimes = Showtime::with('ruangan')
+            // 3. Ambil jadwal tayang spesifik untuk tanggal yang dipilih dan BELUM terlewat
+            $query = Showtime::with('ruangan')
                 ->where('film_id', $film->id)
                 ->where('tanggal', $selectedDate)
-                ->orderBy('jam')
+                // Filter: Hanya ambil yang waktu tayangnya di masa depan
+                ->whereRaw("CONCAT(tanggal, ' ', jam) > ?", [$currentDateTime->format('Y-m-d H:i:s')]);
+
+            $showtimes = $query->orderBy('jam')
                 ->get();
         }
 
         return view('frontend.film', compact('film', 'showtimes', 'selectedDate', 'showtimeDates'));
     }
+
+    // ----------------------------------------------------
+    // FUNGSI profile: Menampilkan profil pengguna
+    // ----------------------------------------------------
 
     /**
      * Tampilkan halaman profil pengguna.

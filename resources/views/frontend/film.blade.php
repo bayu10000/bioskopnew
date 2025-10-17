@@ -36,7 +36,9 @@
     {{ $film->durasi }} min
 </div>
                         
-                        <div class="comment"><i class="fa fa-comments"></i> {{ $film->showtimes->count() }} Jadwal</div>
+<div class="comment"><i class="fa fa-calendar-alt"></i>
+    {{ $film->showtimes->count() }} Jadwal
+</div>
                         <div class="view"><i class="fa fa-eye"></i> {{ $film->tiket_terjual}}</div>
                     </div>
                 </div>
@@ -45,6 +47,17 @@
                     <div class="anime__details__text">
                         <div class="anime__details__title">
                             <h3>{{ $film->judul }}</h3>
+
+                            {{-- <div class="anime__details__rating"> --}}
+                                <div class="rating">
+                                    <a href="#"><i class="fa fa-star"></i></a>
+                                    <a href="#"><i class="fa fa-star"></i></a>
+                                    <a href="#"><i class="fa fa-star"></i></a>
+                                    <a href="#"><i class="fa fa-star"></i></a>
+                                    <a href="#"><i class="fa fa-star-half-o"></i></a>
+                                {{-- </div> --}}
+                                <span>1.029 Votes</span>
+                            </div>
                             {{-- <span>{{ $film->sutradara }}</span> --}}
                         </div>
                         <p>{{ $film->sinopsis }}</p>
@@ -148,13 +161,16 @@
                                             <strong><span class="{{ $warnaRuangan }}">{{ $showtime->ruangan->nama }}</span></strong>
                                             <p><strong>Harga:</strong> Rp {{ number_format($showtime->harga, 0, ',', '.') }}</p>
                                         </div>
+                                        
                                         <div class="showtime-action mt-auto">
                                             @auth
                                                 <a href="{{ route('order.show', $showtime->id) }}" class="btn primary-btn w-100">Beli Tiket</a>
                                             @else
-                                                <a href="{{ route('login.form') }}" class="btn primary-btn w-100">Login untuk Beli</a>
+                                                {{-- ✅ PERBAIKAN: Arahkan ke rute yang dilindungi ('order.show') --}}
+                                                <a href="{{ route('order.show', $showtime->id) }}" class="btn primary-btn w-100">Login untuk Beli</a> 
                                             @endauth
                                         </div>
+                                        
                                     </div>
                                 </div>
                             @endforeach
@@ -176,6 +192,11 @@
 
 {{-- Styling Tambahan --}}
 <style>
+
+.anime__details__title .rating {
+    color: yellow;
+}
+
 /* 3. Style Poster Film - Disesuaikan dengan Rasio 2:3 */
 .anime__details__pic {
     /* Tambahkan properti untuk membuat poster responsif pada semua ukuran */

@@ -50,7 +50,7 @@ class OrderDetailResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('order.user.name') // ✅ PERBAIKAN DI SINI
-                    ->label('User')
+                    ->label('Pelanggan')
                     ->sortable()
                     ->searchable(),
 
@@ -87,6 +87,7 @@ class OrderDetailResource extends Resource
                     ->colors([
                         'warning' => 'pending',
                         'success' => 'paid',
+                        'primary' => 'done',
                         'danger'  => 'cancelled',
                     ])
                     ->sortable(),

@@ -40,4 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-orders', [OrderController::class, 'myOrders'])->name('my-orders');
     // Rute Untuk cancel Pesanan
     Route::post('/order/{orderId}/cancel', [OrderController::class, 'cancelOrder'])->name('order.cancel');
+    Route::post('/order/{orderId}/done', [OrderController::class, 'markAsDone'])
+        ->name('order.mark-as-done')
+        ->middleware('auth');
 });

@@ -2,19 +2,41 @@
 
 @section('content')
 
-{{-- 1. HERO SECTION --}}
+{{-- 1. HERO SECTION (Dengan Multiple Background Video) --}}
 <section id="hero" class="hero section dark-background">
-    {{-- Wrapper background slideshow --}}
-    <div id="hero-slideshow">
-        <div class="hero-slide active" style="background-image: url('{{ asset('img/cun.jpg') }}');"></div>
-        <div class="hero-slide" style="background-image: url('{{ asset('img/film.jpg') }}');"></div>
-        <div class="hero-slide" style="background-image: url('{{ asset('img/sup.jpg') }}');"></div>
-        <div class="hero-slide" style="background-image: url('{{ asset('img/god.jpg') }}');"></div>
+    {{-- Wrapper background video slideshow --}}
+    <div id="hero-video-slideshow">
+        {{-- Video 1: Tambahkan class 'active' agar video ini diputar pertama --}}
+        <video class="hero-video-slide active" autoplay loop muted playsinline>
+            <source src="{{ asset('videos/marvel.mp4') }}" type="video/mp4">
+            {{-- <source src="{{ asset('video/random_hero_bg_1.webm') }}" type="video/webm"> --}}
+        </video>
+        <video class="hero-video-slide" loop muted playsinline>
+            <source src="{{ asset('videos/wano.mp4') }}" type="video/mp4">
+            {{-- <source src="{{ asset('video/random_hero_bg_1.webm') }}" type="video/webm"> --}}
+        </video>
+
+        {{-- Video 2 --}}
+        <video class="hero-video-slide" loop muted playsinline>
+            <source src="{{ asset('videos/demon.mp4') }}" type="video/mp4">
+            {{-- <source src="{{ asset('video/random_hero_bg_2.webm') }}" type="video/webm"> --}}
+        </video>
+
+        {{-- Video 3, dst. Anda bisa menambahkannya di sini --}}
+        <video class="hero-video-slide" loop muted playsinline>
+            <source src="{{ asset('videos/tom.mp4') }}" type="video/mp4">
+            {{-- <source src="{{ asset('video/random_hero_bg_3.webm') }}" type="video/webm"> --}}
+        </video>
+        <video class="hero-video-slide" loop muted playsinline>
+            <source src="{{ asset('videos/star.mp4') }}" type="video/mp4">
+            {{-- <source src="{{ asset('video/random_hero_bg_3.webm') }}" type="video/webm"> --}}
+        </video>
     </div>
 
     {{-- Overlay --}}
     <div class="hero-gradient-overlay"></div>
 
+    {{-- Konten Utama Hero Section --}}
     {{-- <div class="container d-flex flex-column align-items-center justify-content-center">
         <h2 data-aos="fade-up" data-aos-delay="100">SELAMAT DATANG DI CINEPHILE!</h2>
         <p data-aos="fade-up" data-aos-delay="200">Lebih dari sekadar menonton, ini adalah pengalaman sinematik.</p>
@@ -25,10 +47,11 @@
 </section>
 {{-- END HERO SECTION --}}
 
----
+<hr>
 
-{{-- 2. KENAPA MEMILIH CINEPHILE --}}
+{{-- 2. KENAPA MEMILIH CINEPHILE (Tidak ada perubahan) --}}
 <section class="anime-details spad" style="padding-top: 50px;">
+    {{-- ... (Isi section ini tetap sama seperti sebelumnya) ... --}}
     <div class="container">
         <div class="row">
             <div class="col-lg-10 offset-lg-1">
@@ -54,33 +77,64 @@
                                 <h5 class="text-danger mb-2">Kenyamanan Maksimal</h5>
                                 <p class="text-white-50 mb-0">Duduk santai di kursi ergonomis kami yang dirancang untuk kenyamanan menonton Anda.</p>
                             </div>
+
+                           
+                            
                         </div>
+                       
                     </div>
                 </div>
             </div>
+           
         </div>
+     
     </div>
+   
 </section>
 
----
+<hr>
 
-{{-- 3. SCRIPT SLIDESHOW --}}
+{{-- 3. SCRIPT SLIDESHOW VIDEO --}}
 <script>
     document.addEventListener("DOMContentLoaded", () => {
-        const slides = document.querySelectorAll(".hero-slide");
+        const videos = document.querySelectorAll(".hero-video-slide");
         let current = 0;
+        const intervalTime = 8000; // Ganti video setiap 8 detik
 
-        function nextSlide() {
-            slides[current].classList.remove("active");
-            current = (current + 1) % slides.length;
-            slides[current].classList.add("active");
+        function nextVideo() {
+            // 1. Dapatkan video aktif saat ini
+            const currentVideo = videos[current];
+            
+            // 2. Hapus status 'active' dan PAUSE video saat ini
+            currentVideo.classList.remove("active");
+            currentVideo.pause(); 
+            
+            // 3. Pindah ke indeks video berikutnya
+            current = (current + 1) % videos.length;
+            
+            // 4. Dapatkan video berikutnya
+            const nextVideo = videos[current];
+
+            // 5. Tambahkan status 'active' dan PLAY video berikutnya
+            nextVideo.classList.add("active");
+            nextVideo.currentTime = 0; // Pastikan video mulai dari awal
+            nextVideo.play().catch(error => {
+                 // Menangani error jika play() gagal (misalnya, jika browser memblokir)
+                 console.error("Video play failed:", error);
+            });
         }
 
-        setInterval(nextSlide, 5000); // ganti gambar setiap 5 detik
+        // Mulai interval slideshow setelah DOM dimuat
+        setInterval(nextVideo, intervalTime);
+
+        // Pastikan video pertama diputar saat halaman dimuat (untuk browser yang mendukung)
+        videos[0].play().catch(error => {
+             console.error("Initial video play failed:", error);
+        });
     });
 </script>
 
----
+<hr>
 
 {{-- 4. STYLE --}}
 <style>
@@ -97,33 +151,41 @@
     background: #000;
 }
 
-/* Background slideshow wrapper */
-#hero-slideshow {
+/* Background video slideshow wrapper - BARU */
+#hero-video-slideshow {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 1;
+    z-index: 1; 
     overflow: hidden;
 }
 
-/* Tiap gambar slide */
-.hero-slide {
+/* Tiap elemen video slide - BARU */
+.hero-video-slide {
     position: absolute;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
+    top: 50%;
+    left: 50%;
+    /* Triks untuk memastikan video menutupi seluruh background sambil mempertahankan aspek rasio */
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translate(-50%, -50%);
+    object-fit: cover;
+    
+    /* Efek transisi untuk pergantian video */
     opacity: 0;
-    transition: opacity 1.2s ease-in-out;
+    transition: opacity 1.2s ease-in-out; 
 }
 
-.hero-slide.active {
+/* Video aktif (yang sedang ditampilkan) */
+.hero-video-slide.active {
     opacity: 1;
 }
 
-/* Overlay gradasi */
+/* Overlay gradasi (Tidak Berubah) */
 .hero-gradient-overlay {
     content: '';
     position: absolute;
@@ -135,13 +197,14 @@
     z-index: 2;
 }
 
-/* Konten di atas slide */
+/* Konten di atas slide (Tidak Berubah) */
 .hero.section .container {
     position: relative;
     z-index: 3;
     padding: 0 15px;
 }
 
+/* ... (Style H2, P, dan Button lainnya tetap sama) ... */
 .hero.section h2 {
     font-size: 2.8rem;
     font-weight: 800;
@@ -150,7 +213,7 @@
     text-transform: uppercase;
     letter-spacing: 1px;
 }
-
+/* ... (lanjutan style di bawah) ... */
 .hero.section p {
     font-size: 1.1rem;
     color: #fff;
@@ -173,7 +236,7 @@
     background: #ff5252;
 }
 
-/* ==== CARD SECTION ==== */
+/* ==== CARD SECTION (Tidak Berubah) ==== */
 .showtime-card {
     background: #0d0d0d;
     border-radius: 8px;
@@ -192,7 +255,7 @@
     border: 1px solid #333;
 }
 
-/* ==== RESPONSIVE ==== */
+/* ==== RESPONSIVE (Tidak Berubah) ==== */
 @media (max-width: 991px) {
     .hero.section h2 {
         font-size: 2.1rem;

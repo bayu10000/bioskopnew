@@ -70,7 +70,16 @@
                                                     alt="{{ $film->judul }}" class="poster-image">
                                             <div class="ep">{{ $film->durasi }} min</div>
                                             <div class="comment"><i class="fa fa-comments"></i>
-                                                {{ $film->showtimes->count() }} Jadwal
+                                                @php
+                                                    $showtimeCount = $film->showtimes->count();
+                                                @endphp
+                                            
+                                                @if ($showtimeCount > 0)
+                                                    {{ $showtimeCount }} Jadwal
+                                                @else
+                                                    0 Jadwal
+                                                    {{-- Atau bisa juga: Tidak Ada Jadwal --}}
+                                                @endif
                                             </div>
                                             <div class="view">
                                                 <i class="fa fa-eye"></i>

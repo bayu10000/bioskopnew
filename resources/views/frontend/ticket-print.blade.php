@@ -77,6 +77,10 @@
                 <strong>PELANGGAN</strong>
                 <span>{{ $order->user->name ?? 'Pengguna Tidak Ditemukan' }}</span>
             </div>
+            <div class="detail-item">
+                <strong>USERNAME</strong>
+                <span>{{ $order->user->username ?? 'Pengguna Tidak Ditemukan' }}</span>
+            </div>
             
             {{-- Tanggal Pembelian --}}
             <div class="detail-item detail-full">

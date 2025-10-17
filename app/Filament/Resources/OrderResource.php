@@ -35,7 +35,7 @@ class OrderResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('ID Order')->sortable(),
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('User')
+                    ->label('Pelanggan')
                     ->sortable()
                     ->searchable()
                     ->default('-'),
@@ -66,9 +66,10 @@ class OrderResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->colors([
-                        'pending'   => 'warning',
-                        'paid'      => 'success',
-                        'cancelled' => 'danger',
+                        'warning' => 'pending',
+                        'success' => 'paid',
+                        'primary' => 'done',
+                        'danger'  => 'cancelled',
                     ])
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
@@ -107,7 +108,7 @@ class OrderResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading('Batalkan Pesanan?')
                     ->modalDescription('Apakah Anda yakin ingin membatalkan pesanan ini? Kursi akan **dibebaskan (available)** dan detail kursi **tetap tersimpan** sebagai riwayat.')
-                    ->visible(fn(Order $record): bool => in_array($record->status, ['pending', 'paid']))
+                    ->visible(fn(Order $record): bool => $record->status !== 'cancelled' && $record->status !== 'done')
                     ->action(function (Order $record) {
                         // Panggil fungsi helper statis
                         if (OrderController::releaseSeats($record)) {

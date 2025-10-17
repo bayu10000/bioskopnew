@@ -14,23 +14,33 @@ class AuthController extends Controller
         return view('auth.register');
     }
 
+    // D:\laragon\www\bioskopnew\app\Http\Controllers\AuthController.php
+
     public function register(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            // Tambahkan validasi untuk username
+            'username' => 'required|string|max:255|unique:users',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
         ]);
 
         $user = User::create([
             'name' => $request->name,
+            // Tambahkan data username
+            'username' => $request->username,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+
+            // Catatan: Jika Anda menambahkan kolom 'role' ke DB, Anda harus menambahkannya di sini juga:
+            // 'role' => 'pelanggan', 
         ]);
+
         $user->assignRole('pelanggan');
         Auth::login($user);
 
-        return redirect()->route('home');
+        return redirect()->intended(route('home'));
     }
 
     public function showLoginForm()

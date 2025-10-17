@@ -77,7 +77,7 @@ class OrderController extends Controller
             $selectedSeatIds = $seats->pluck('id')->toArray();
             $totalPrice = $showtime->harga * count($selectedSeatIds);
 
-            // 💡 PERBAIKAN: Buat hash unik untuk QR Code
+            // PERBAIKAN: Buat hash unik untuk QR Code
             $qrCodeHash = Str::uuid()->toString();
 
             // Buat pesanan baru
@@ -87,7 +87,7 @@ class OrderController extends Controller
                 'jumlah_tiket' => count($selectedSeatIds),
                 'total_harga' => $totalPrice,
                 'status' => 'pending',
-                'qr_code_hash' => $qrCodeHash, // 💡 SIMPAN HASH
+                'qr_code_hash' => $qrCodeHash, // SIMPAN HASH
             ]);
 
             if (!$order) {
@@ -133,7 +133,7 @@ class OrderController extends Controller
     }
 
     // ----------------------------------------------------
-    // 💡 FUNGSI HELPER UNTUK MEMBEBASKAN KURSI (REUSABLE)
+    // FUNGSI HELPER UNTUK MEMBEBASKAN KURSI (REUSABLE)
     // ----------------------------------------------------
     /**
      * Fungsi Helper untuk membebaskan kursi dan mengubah status pesanan menjadi 'cancelled'.
@@ -163,7 +163,7 @@ class OrderController extends Controller
                     ->update(['status' => 'available']);
             }
 
-            // 💥 PENTING: detach() DIHILANGKAN! 
+            // PENTING: detach() DIHILANGKAN! 
             // Ini agar record di tabel pivot (order_details) tetap ada untuk riwayat.
             // $order->seats()->detach(); 
 
@@ -178,7 +178,42 @@ class OrderController extends Controller
     // ----------------------------------------------------
 
     // ----------------------------------------------------
-    // 💡 FUNGSI cancelOrder (PELANGGAN)
+    // FUNGSI MARK AS DONE (PELANGGAN)
+    // ----------------------------------------------------
+    // ... (Kode di atas tetap sama)
+
+    // ----------------------------------------------------
+    // FUNGSI MARK AS DONE (PELANGGAN)
+    // ----------------------------------------------------
+    public function markAsDone($orderId)
+    {
+        $order = Order::with('showtime')
+            ->where('id', $orderId)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        $showtimeDateTime = Carbon::parse($order->showtime->tanggal . ' ' . $order->showtime->jam);
+        $currentDateTime = Carbon::now();
+
+        // Kondisi: Hanya PAID DAN jadwal sudah terlewat
+        $canMarkAsDone = ($order->status === 'paid') && $showtimeDateTime->lessThan($currentDateTime);
+
+        if (!$canMarkAsDone) {
+            return redirect()->back()->with('error', 'Pesanan belum lunas atau jadwal tayang belum terlewat.');
+        }
+
+        // 💡 PERBAIKAN PENTING: Gunakan tanda kutip tunggal ('done') secara eksplisit 
+        // untuk memastikan database membaca nilai sebagai string.
+        $order->status = 'done'; // Pastikan nilai ini berupa string
+        $order->save();
+
+        return redirect()->route('my-orders')->with('success', 'Konfirmasi menonton berhasil! Pesanan #' . $orderId . ' telah ditandai sebagai **Selesai Ditonton**.');
+    }
+    // ... (Kode di bawah tetap sama)
+    // ----------------------------------------------------
+
+    // ----------------------------------------------------
+    // FUNGSI cancelOrder (PELANGGAN)
     // ----------------------------------------------------
     public function cancelOrder(Request $request, $orderId)
     {
@@ -187,16 +222,18 @@ class OrderController extends Controller
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
-        // Cek status dan waktu tayang (hanya bisa dibatalkan jika belum lewat)
+        // Cek status dan waktu tayang
         $showtimeDateTime = Carbon::parse($order->showtime->tanggal . ' ' . $order->showtime->jam);
-        $canCancel = in_array($order->status, ['pending', 'paid']) && $showtimeDateTime->isFuture();
+
+        // 💡 PERBAIKAN: Hanya izinkan pembatalan jika status 'pending' DAN jadwal BELUM terlewat
+        $canCancel = in_array($order->status, ['pending']) && $showtimeDateTime->isFuture();
 
         if ($order->status == 'cancelled') {
             return redirect()->back()->with('error', 'Pesanan ini sudah dibatalkan sebelumnya.');
         }
 
         if (!$canCancel) {
-            return redirect()->back()->with('error', 'Pesanan tidak dapat dibatalkan karena status atau waktu tayang sudah lewat.');
+            return redirect()->back()->with('error', 'Pesanan tidak dapat dibatalkan (Harus status Pending dan jadwal belum lewat).');
         }
 
         // Panggil fungsi helper

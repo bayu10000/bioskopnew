@@ -76,7 +76,6 @@ class ShowtimeResource extends Resource
                     ->required()
                     ->options([
                         '10:00' => '10:00',
-
                         '16:00' => '16:00',
                         '19:00' => '19:00',
                         '22:00' => '22:00',
@@ -130,6 +129,25 @@ class ShowtimeResource extends Resource
             ]);
     }
 
+    // ... (Bagian tengah file)
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        // 💡 FILTER: Hanya tampilkan jadwal tayang yang belum terlewat.
+        $currentDateTime = Carbon::now();
+
+        // Gabungkan tanggal dan jam menjadi satu timestamp untuk perbandingan.
+        // Gunakan where() dengan klausa raw untuk membandingkan secara akurat.
+        $query->whereRaw("CONCAT(tanggal, ' ', jam) > ?", [$currentDateTime->format('Y-m-d H:i:s')]);
+        // Menggunakan '>' alih-alih '>=' untuk menghilangkan jadwal yang sudah dimulai/sudah terlewat 1 detik.
+        // Jika Anda ingin jadwal tetap terlihat selama jam tayang, gunakan '>='.
+
+        return $query;
+    }
+
+    // ... (Bagian bawah file)
     public static function getRelations(): array
     {
         return [

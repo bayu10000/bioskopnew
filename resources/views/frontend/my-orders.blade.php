@@ -72,6 +72,7 @@
                                     <div class="col-12 col-md-8 order-detail-left">
                                         <p><strong>Film:</strong> <span class="text-danger">{{ $order->showtime->film->judul }}</span></p>
                                         <p><strong>Pelanggan:</strong> {{ $order->user->name }}</p>
+                                        <p><strong>Username:</strong> {{ $order->user->username }}</p>
                                         <p><strong>Jadwal Tayang:</strong> 
                                             {{ \Carbon\Carbon::parse($order->showtime->tanggal . ' ' . $order->showtime->jam)->translatedFormat('l, d F Y \p\u\k\u\l H:i') }}
                                         </p>
@@ -100,14 +101,26 @@
                                     </div>
 
                                     {{-- Kolom Kanan (QR, Status, dan Tombol Aksi) - col-md-4 --}}
+                                    {{-- Kolom Kanan (QR, Status, dan Tombol Aksi) - col-md-4 --}}
+                                   
+
+                                    {{-- Kolom Kanan (QR, Status, dan Tombol Aksi) - col-md-4 --}}
                                     <div class="col-12 col-md-4 text-center qr-action-area">
-                                        
+                                    
                                         @php
-                                            // Logic untuk menentukan apakah pesanan bisa dibatalkan
                                             $showtimeDateTime = \Illuminate\Support\Carbon::parse($order->showtime->tanggal . ' ' . $order->showtime->jam);
-                                            $canCancel = in_array($order->status, ['pending', 'paid']) && $showtimeDateTime->isFuture();
+                                            $currentDateTime = \Illuminate\Support\Carbon::now();
+                                    
+                                            $isPast = $showtimeDateTime->lessThan($currentDateTime);
+                                            $isFuture = $showtimeDateTime->isFuture();
+                                            
+                                            // 1. Logic untuk tombol Batalkan (Hanya PENDING & Belum Tayang)
+                                            $canCancel = ($order->status === 'pending') && $isFuture;
+                                    
+                                            // 2. Logic untuk tombol Konfirmasi Selesai (Hanya PAID & Sudah Lewat)
+                                            $canMarkAsDone = ($order->status === 'paid') && $isPast;
                                         @endphp
-                                        
+                                    
                                         {{-- Container untuk QR dan Aksi (dipusatkan) --}}
                                         <div class="d-flex flex-column align-items-center gap-2">
                                             
@@ -118,31 +131,37 @@
                                                 </div>
                                                 <p class="mb-3"><a></a></p>
                                             @endif
-
-                                            {{-- Tombol Lanjutkan Pembayaran --}}
-                                            {{-- @if($order->status == 'pending')
-                                                <a href="#" class="btn btn-sm btn-success w-100 w-md-auto" style="max-width: 200px;">
-                                                    <i class="fa fa-credit-card"></i> Lanjutkan Pembayaran
-                                                </a>
-                                            @endif --}}
-
-                                           <p></p>
                                             
-                                            {{-- TOMBOL CANCEL --}}
+                                            <p></p>
+                                    
+                                            {{-- 💡 TOMBOL KONFIRMASI SUDAH MENONTON (BARU) --}}
+                                            @if($canMarkAsDone)
+                                                <form action="{{ route('order.mark-as-done', $order->id) }}" method="POST" style="display: block; width: 100%; max-width: 200px;">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-success w-100">
+                                                        <i class="fa fa-check-circle"></i> Konfirmasi Sudah Menonton
+                                                    </button>
+                                                </form>
+                                            @endif
+                                            
+                                            {{-- TOMBOL CANCEL (hanya pending dan belum tayang) --}}
                                             @if($canCancel)
                                                 <form action="{{ route('order.cancel', $order->id) }}" method="POST" style="display: block; width: 100%; max-width: 200px;" 
-                                                        onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan #{{ $order->id }}? Kursi akan dilepas dan tersedia kembali.');">
+                                                    onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan #{{ $order->id }}? Kursi akan dilepas dan tersedia kembali.');">
                                                     @csrf
                                                     <button type="submit" class="btn btn-sm btn-danger w-100">
                                                         <i class="fa fa-times-circle"></i> Batalkan Pesanan
                                                     </button>
                                                 </form>
                                             @endif
-
+                                    
                                             {{-- Status (Presisi di tengah) --}}
                                             <p class="small text-secondary mt-3">
-
-                                                @if($order->status == 'paid')
+                                    
+                                                @if($order->status == 'done')
+                                                    {{-- 💡 STATUS DONE (BARU) --}}
+                                                    <span class="badge bg-primary badge-xl">SELESAI DITONTON</span>
+                                                @elseif($order->status == 'paid')
                                                     <span class="badge bg-success badge-xl">LUNAS</span>
                                                 @elseif($order->status == 'pending')
                                                     <span class="badge bg-warning text-dark badge-xl">MENUNGGU KONFIRMASI</span>
@@ -152,10 +171,11 @@
                                                     <span class="badge bg-secondary badge-xl">{{ strtoupper($order->status) }}</span>
                                                 @endif
                                             </p>
-
+                                    
                                         </div>
-
+                                    
                                     </div>
+                                   
                                 </div>
                             </div>
                         </div>

@@ -70,7 +70,7 @@ class FilmResource extends Resource
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('sutradara')
-                    ->label('SUtradara')
+                    ->label('Sutradara')
                     ->badge()
                     ->searchable()
                     ->sortable(),
