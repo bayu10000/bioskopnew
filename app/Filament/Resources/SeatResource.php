@@ -12,6 +12,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Illuminate\Database\Eloquent\Builder; // 💡 Tambahkan ini
+use Carbon\Carbon; // 💡 Tambahkan ini
 
 class SeatResource extends Resource
 {
@@ -78,6 +80,22 @@ class SeatResource extends Resource
                 ]),
             ]);
     }
+
+    // 💡 FUNGSI BARU: Filter agar hanya menampilkan Seat yang jadwalnya belum lewat
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        $currentDateTime = Carbon::now();
+
+        // Gabungkan tanggal dan jam dari showtime dan pastikan MASA DEPAN
+        $query->whereHas('showtime', function (Builder $q) use ($currentDateTime) {
+            $q->whereRaw("CONCAT(tanggal, ' ', jam) > ?", [$currentDateTime->format('Y-m-d H:i:s')]);
+        });
+
+        return $query;
+    }
+
 
     public static function getPages(): array
     {

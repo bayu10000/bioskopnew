@@ -141,40 +141,66 @@ class OrderController extends Controller
      * @param Order $order
      * @return bool True jika berhasil, False jika gagal.
      */
-    public static function releaseSeats(Order $order): bool
+    // ... (Import dan class tetap sama)
+
+    // ----------------------------------------------------
+    // FUNGSI HELPER UNTUK MEMBEBASKAN KURSI (CANCEL)
+    // ----------------------------------------------------
+    public static function lockSeats(Order $order, string $newStatus): bool
     {
-        if ($order->status === 'cancelled') {
-            return true; // Anggap berhasil jika sudah dibatalkan
+        if (!in_array($newStatus, ['paid', 'done']) || $order->status === $newStatus) {
+            return true;
         }
 
         try {
             DB::beginTransaction();
 
-            // 1. Ambil ID kursi yang terhubung
-            $seatIds = $order->seats()->pluck('seat_id')->toArray();
+            // 1. Ubah status kursi menjadi 'booked'
+            $seatIds = $order->seats->pluck('id')->toArray();
+            Seat::whereIn('id', $seatIds)->update(['status' => 'booked']);
 
-            // 2. Ubah status pesanan menjadi 'cancelled'
-            $order->status = 'cancelled';
-            $order->save();
-
-            // 3. Bebaskan kursi (ubah status di tabel `seats` menjadi 'available')
-            if (!empty($seatIds)) {
-                Seat::whereIn('id', $seatIds)
-                    ->update(['status' => 'available']);
-            }
-
-            // PENTING: detach() DIHILANGKAN! 
-            // Ini agar record di tabel pivot (order_details) tetap ada untuk riwayat.
-            // $order->seats()->detach(); 
+            // 2. Ubah status order
+            $order->status = $newStatus;
+            $order->save(); // ⬅️ Ini akan memicu Order::booted()->static::updated()
 
             DB::commit();
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            // \Log::error("Error releasing seats: " . $e->getMessage());
+            \Log::error("Gagal mengunci kursi/mengaktifkan pesanan: " . $e->getMessage());
             return false;
         }
     }
+
+    // ----------------------------------------------------
+    // 💡 FIX: Hapus panggilan Rekap manual
+    // ----------------------------------------------------
+    public static function releaseSeats(Order $order): bool
+    {
+        if ($order->status === 'cancelled') {
+            return true;
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // 1. Ubah status kursi menjadi 'available'
+            $seatIds = $order->seats->pluck('id')->toArray();
+            Seat::whereIn('id', $seatIds)->update(['status' => 'available']);
+
+            // 2. Ubah status order menjadi 'cancelled'
+            $order->status = 'cancelled';
+            $order->save(); // ⬅️ Ini akan memicu Order::booted()->static::updated()
+
+            DB::commit();
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error("Gagal membebaskan kursi/membatalkan pesanan: " . $e->getMessage());
+            return false;
+        }
+    }
+
     // ----------------------------------------------------
 
     // ----------------------------------------------------

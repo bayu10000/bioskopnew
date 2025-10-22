@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\ShowtimeResource\Pages;
 use Illuminate\Validation\Rules\Unique;
 use Carbon\Carbon;
+use Filament\Notifications\Notification; // 💡 Tambahkan ini
 
 class ShowtimeResource extends Resource
 {
@@ -40,58 +41,37 @@ class ShowtimeResource extends Resource
                     ->unique(ignoreRecord: true, modifyRuleUsing: function (Unique $rule, Get $get) {
                         return $rule->where('ruangan_id', $get('ruangan_id'))
                             ->where('tanggal', $get('tanggal'))
-                            ->where('jam', $get('jam'));
+                            ->where('jam', $get('jam')); // Pastikan kombinasi unik film, ruangan, tanggal, jam
                     }),
 
                 Select::make('ruangan_id')
                     ->label('Ruangan')
                     ->relationship('ruangan', 'nama')
                     ->required()
-                    ->preload()
-                    ->live(),
+                    ->live()
+                    ->afterStateUpdated(fn(Forms\Set $set) => $set('tanggal', null))
+                    ->preload(),
 
                 DatePicker::make('tanggal')
-                    ->label('Tanggal Tayang')
+                    ->label('Tanggal')
                     ->required()
-                    ->live()
-                    ->minDate(function (Get $get) {
-                        $filmId = $get('film_id');
-                        if ($filmId) {
-                            $film = Film::find($filmId);
-                            return $film ? Carbon::parse($film->tanggal_mulai) : null;
-                        }
-                        return null;
-                    })
-                    ->maxDate(function (Get $get) {
-                        $filmId = $get('film_id');
-                        if ($filmId) {
-                            $film = Film::find($filmId);
-                            return $film ? Carbon::parse($film->tanggal_selesai) : null;
-                        }
-                        return null;
-                    }),
+                    ->minDate(now()) // Hanya boleh tanggal hari ini dan ke depan
+                    ->afterStateUpdated(fn(Forms\Set $set) => $set('jam', null)),
 
-                Select::make('jam')
+                TimePicker::make('jam')
                     ->label('Jam Tayang')
                     ->required()
-                    ->options([
-                        '10:00' => '10:00',
-                        '16:00' => '16:00',
-                        '19:00' => '19:00',
-                        '22:00' => '22:00',
-                    ])
                     ->unique(ignoreRecord: true, modifyRuleUsing: function (Unique $rule, Get $get) {
                         return $rule->where('ruangan_id', $get('ruangan_id'))
                             ->where('film_id', $get('film_id'))
                             ->where('tanggal', $get('tanggal'));
                     }),
 
-
                 TextInput::make('harga')
-                    ->label('Harga Tiket')
+                    ->label('Harga')
+                    ->numeric()
                     ->required()
-                    ->prefix('Rp')
-                    ->numeric(),
+                    ->prefix('IDR'),
             ]);
     }
 
@@ -100,7 +80,8 @@ class ShowtimeResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('film.judul')
-                    ->label('Judul Film')
+                    ->label('Film')
+                    ->sortable()
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('ruangan.nama')
@@ -125,11 +106,30 @@ class ShowtimeResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+
+                    // 💡 FUNGSI BARU: Bulk Action untuk membersihkan jadwal yang sudah lewat
+                    Tables\Actions\BulkAction::make('clearOldShowtimes')
+                        ->label('Hapus Jadwal Lewat (Otomatis Hapus Kursi)')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Konfirmasi Penghapusan Jadwal Lewat')
+                        ->modalDescription('Tindakan ini akan menghapus SEMUA jadwal tayang yang **waktu tayangnya sudah terlewat** dan **Kursi (Seats) yang berelasi akan ikut terhapus**. Lanjutkan?')
+                        ->action(function () {
+                            $currentDateTime = Carbon::now();
+                            // Hapus semua yang waktu gabungannya sudah lewat dari sekarang
+                            $deletedCount = \App\Models\Showtime::whereRaw("CONCAT(tanggal, ' ', jam) < ?", [$currentDateTime->format('Y-m-d H:i:s')])
+                                ->delete();
+
+                            Notification::make()
+                                ->title('Pembersihan Berhasil!')
+                                ->body("{$deletedCount} jadwal tayang yang sudah lewat berhasil dihapus. Kursi terkait otomatis ikut terhapus.")
+                                ->success()
+                                ->send();
+                        }),
                 ]),
             ]);
     }
-
-    // ... (Bagian tengah file)
 
     public static function getEloquentQuery(): Builder
     {
@@ -139,15 +139,12 @@ class ShowtimeResource extends Resource
         $currentDateTime = Carbon::now();
 
         // Gabungkan tanggal dan jam menjadi satu timestamp untuk perbandingan.
-        // Gunakan where() dengan klausa raw untuk membandingkan secara akurat.
+        // Hanya tampilkan yang MASA DEPAN (lebih besar dari sekarang).
         $query->whereRaw("CONCAT(tanggal, ' ', jam) > ?", [$currentDateTime->format('Y-m-d H:i:s')]);
-        // Menggunakan '>' alih-alih '>=' untuk menghilangkan jadwal yang sudah dimulai/sudah terlewat 1 detik.
-        // Jika Anda ingin jadwal tetap terlihat selama jam tayang, gunakan '>='.
 
         return $query;
     }
 
-    // ... (Bagian bawah file)
     public static function getRelations(): array
     {
         return [

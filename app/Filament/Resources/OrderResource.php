@@ -81,7 +81,7 @@ class OrderResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                // Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->visible(fn(Order $record): bool => $record->status !== 'paid')
                     ->modalDescription('Menghapus pesanan ini (kecuali paid) tidak membebaskan kursi secara otomatis. Gunakan "Batalkan Pesanan" untuk membebaskan kursi.'),
@@ -195,7 +195,7 @@ class OrderResource extends Resource
         return [
             'index'  => Pages\ListOrders::route('/'),
             'create' => Pages\CreateOrder::route('/create'),
-            'edit'   => Pages\EditOrder::route('/{record}/edit'),
+            // 'edit'   => Pages\EditOrder::route('/{record}/edit'),
         ];
     }
 }

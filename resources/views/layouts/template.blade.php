@@ -218,6 +218,29 @@
             height: 2px;
             background: #e53637;
         }
+
+        html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Pastikan konten halaman mengisi ruang tersisa */
+main, section, .content-wrapper {
+    flex: 1;
+}
+
+/* Footer tetap di bawah */
+footer.footer {
+    margin-top: auto;
+}
+
     </style>
 </head>
 

@@ -324,5 +324,53 @@ document.addEventListener('DOMContentLoaded', function () {
     background-color: #218838;
     transform: scale(1.05);
 }
+
+/* ====== Breadcrumb Responsif ====== */
+.breadcrumb-option {
+    background-color: transparent;
+}
+
+.breadcrumb__links {
+    flex-wrap: wrap; /* biar bisa turun ke baris berikutnya */
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.breadcrumb__links a {
+    display: flex;
+    align-items: center;
+    color: #fff;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.breadcrumb__links i {
+    margin-right: 5px;
+    color: #e53637;
+}
+
+.breadcrumb__links span {
+    margin: 0 6px;
+    color: #aaa;
+}
+
+/* Mobile optimization */
+@media (max-width: 576px) {
+    .breadcrumb__links {
+        justify-content: flex-start;
+        gap: 4px;
+        font-size: 0.8rem;
+    }
+
+    .breadcrumb__links a {
+        flex: 0 0 auto;
+    }
+
+    .breadcrumb-option {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+}
+
 </style>
 @endpush
